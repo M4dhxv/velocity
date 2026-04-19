@@ -43,25 +43,48 @@ export default async function handler(req, res) {
     }
 
     // 1) STT
-    const transcript = await transcribeAudio(audioBase64);
+    let transcript = '';
+    try {
+      transcript = await transcribeAudio(audioBase64);
+    } catch (error) {
+      console.error('stt_failed', error);
+      return res.status(502).json({ success: false, message: 'stt_failed' });
+    }
     if (!transcript) {
       return res.status(200).json({ success: false, message: 'transcription_failed' });
     }
 
     // 2) LLM (single call) + 3) validation
-    const profile = await extractProfileFromTranscript(transcript);
+    let profile;
+    try {
+      profile = await extractProfileFromTranscript(transcript);
+    } catch (error) {
+      console.error('profile_extraction_failed', error);
+      return res.status(502).json({ success: false, message: 'profile_extraction_failed' });
+    }
 
     // 4) save profile
-    await upsertUserProfile(userId, profile, transcript);
+    try {
+      await upsertUserProfile(userId, profile, transcript);
+    } catch (error) {
+      console.error('profile_save_failed', error);
+      return res.status(500).json({ success: false, message: 'profile_save_failed' });
+    }
 
     // 5) TTS responses
     const ackText = 'Got it. Setting up your profile.';
     const successText = 'Your profile is ready.';
 
-    const [ackAudio, successAudio] = await Promise.all([
-      synthesizeSpeech(ackText),
-      synthesizeSpeech(successText),
-    ]);
+    let ackAudio = '';
+    let successAudio = '';
+    try {
+      [ackAudio, successAudio] = await Promise.all([
+        synthesizeSpeech(ackText),
+        synthesizeSpeech(successText),
+      ]);
+    } catch (error) {
+      console.error('tts_failed_non_blocking', error);
+    }
 
     return res.status(200).json({
       success: true,

@@ -621,6 +621,23 @@
     }, 300);
   }
 
+  function buildLocalProfileFromTranscript(transcriptText = '') {
+    const tags = extractKeywordTags(transcriptText);
+    const lower = (transcriptText || '').toLowerCase();
+    const workType = lower.includes('remote') ? 'remote' : lower.includes('local') ? 'local' : 'any';
+    const level = lower.includes('senior') || lower.includes('advanced') ? 'advanced'
+      : lower.includes('beginner') || lower.includes('junior') ? 'beginner'
+        : 'intermediate';
+
+    return {
+      skills: tags.filter((t) => !/work|matches|profile/i.test(t)),
+      experience: '',
+      interests: tags.slice(0, 3),
+      work_type: workType,
+      level,
+    };
+  }
+
   function createWaveBars(count = 28) {
     const waveform = $('voice-waveform');
     waveform.innerHTML = '';
@@ -1010,18 +1027,34 @@
       } else if (data?.message === 'transcription_failed') {
         setStatus('Could not hear clearly. Using fallback matches.', 'processing');
         speakText('I could not hear clearly, but I found some matches for you.');
+        profile = buildLocalProfileFromTranscript(state.transcriptLive);
       }
     } catch (err) {
       const reason = err?.message || 'onboard_request_failed';
       if (reason === 'audio_too_large') {
         setStatus('Audio too long. Keep it under ~10 seconds.', 'processing');
         speakText('Please keep your response shorter. Showing fallback matches now.');
+        profile = buildLocalProfileFromTranscript(state.transcriptLive);
+      } else if (reason === 'stt_failed') {
+        setStatus('Speech recognition service issue. Showing fallback matches.', 'processing');
+        speakText('Speech recognition is having issues. Showing fallback matches now.');
+        profile = buildLocalProfileFromTranscript(state.transcriptLive);
+      } else if (reason === 'profile_extraction_failed') {
+        setStatus('Profile extraction issue. Using local profile build.', 'processing');
+        speakText('I could not extract your full profile, but I can still match you now.');
+        profile = buildLocalProfileFromTranscript(state.transcriptLive);
+      } else if (reason === 'profile_save_failed') {
+        setStatus('Profile save issue. Showing matches anyway.', 'processing');
+        speakText('There was a save issue, but I can still show your matches.');
+        profile = buildLocalProfileFromTranscript(state.transcriptLive);
       } else if (reason === 'transcription_failed') {
         setStatus('Could not transcribe clearly. Showing fallback matches.', 'processing');
         speakText('I could not transcribe clearly. Showing fallback matches now.');
+        profile = buildLocalProfileFromTranscript(state.transcriptLive);
       } else {
         setStatus('Matching service issue. Showing fallback matches.', 'processing');
         speakText('There was a matching service issue. Showing fallback matches now.');
+        profile = buildLocalProfileFromTranscript(state.transcriptLive);
       }
     }
     if (state.processingTagTimer) {
