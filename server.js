@@ -30,7 +30,7 @@ app.get('/api/onboard/start', async (req, res) => {
   }
 });
 
-app.post('/api/onboard/respond', async (req, res) => {
+async function handleOnboardRespond(req, res) {
   try {
     const { user_id: userId, audio_base64: audioBase64 } = req.body || {};
 
@@ -67,12 +67,28 @@ app.post('/api/onboard/respond', async (req, res) => {
     console.error(error);
     return res.status(500).json({ success: false, message: 'respond_failed' });
   }
-});
+}
+
+app.post('/api/onboard/respond', handleOnboardRespond);
 
 app.get('/api/onboard/respond', (_req, res) => {
   return res.status(200).json({
     success: true,
     message: 'onboard_respond_ready',
+    expected_method: 'POST',
+    required_body: {
+      user_id: 'string',
+      audio_base64: 'string',
+    },
+  });
+});
+
+app.post('/api/onboard', handleOnboardRespond);
+
+app.get('/api/onboard', (_req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: 'onboard_ready',
     expected_method: 'POST',
     required_body: {
       user_id: 'string',
