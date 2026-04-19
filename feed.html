@@ -399,8 +399,8 @@
       .voice-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(2.1rem, 8vw, 3.2rem); font-weight: 800; margin-bottom: 0.7rem; letter-spacing: -0.03em; line-height: 1.08; }
       .voice-subtitle { font-size: 1rem; color: #535b71; max-width: 360px; margin: 0 auto 1.5rem; line-height: 1.55; font-weight: 600; }
       .voice-orb-wrap { width: 192px; height: 192px; margin: 0 auto .9rem; position: relative; display: flex; align-items: center; justify-content: center; }
-      .voice-orb-wrap::before { content: ''; position: absolute; inset: -26px; border-radius: 999px; background: radial-gradient(circle, rgba(63,255,139,.30) 0%, rgba(63,255,139,0) 70%); }
-      .voice-orb-wrap::after { content: ''; position: absolute; inset: -8px; border-radius: 999px; border: 1px solid rgba(63,255,139,.45); }
+      .voice-orb-wrap::before { content: ''; position: absolute; inset: -26px; border-radius: 999px; background: radial-gradient(circle, rgba(63,255,139,.30) 0%, rgba(63,255,139,0) 70%); pointer-events: none; }
+      .voice-orb-wrap::after { content: ''; position: absolute; inset: -8px; border-radius: 999px; border: 1px solid rgba(63,255,139,.45); pointer-events: none; }
       .voice-waveform { height: 42px; display: flex; align-items: flex-end; justify-content: center; gap: 5px; margin: 0 auto 1rem; max-width: 220px; }
       .voice-wave-bar { width: clamp(6px, 1.1vw, 9px); height: 16px; border-radius: 999px; background: linear-gradient(180deg, #a2f5c9 0%, #38bf75 100%); transform-origin: center bottom; transition: height 70ms linear, opacity 120ms; opacity: 0.45; }
       .voice-waveform.listening .voice-wave-bar { opacity: 1; }
