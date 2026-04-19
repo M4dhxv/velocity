@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login — GigGrab</title>
+  <meta name="description" content="Join GigGrab. Start earning from gigs near you instantly."/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+  <!-- Supabase JS (UMD — no bundler needed) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #006a33; --primary-container: #3fff8b; --on-primary-container: #005d2c;
+      --secondary-container: #74fbbb; --tertiary-container: #00dcfd;
+      --surface: #f6f6ff; --surface-low: #eef0ff; --surface-container: #e2e7ff;
+      --surface-high: #d9e2ff; --surface-highest: #d1dcff; --surface-lowest: #ffffff;
+      --on-surface: #272e42; --on-surface-variant: #535b71; --outline: #6f768e; --outline-variant: #a5adc6;
+    }
+    body { font-family: 'Manrope', sans-serif; background: var(--surface-lowest); color: var(--on-surface); min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; }
+    h1,h2,h3 { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+    /* LEFT PANEL */
+    .left-panel {
+      background: linear-gradient(160deg, var(--primary) 0%, #003d1c 100%);
+      padding: 3rem; display: flex; flex-direction: column; justify-content: space-between;
+      position: relative; overflow: hidden;
+    }
+    .left-panel::before { content: ''; position: absolute; bottom: -20%; right: -20%; width: 500px; height: 500px; background: radial-gradient(circle, rgba(63,255,139,0.2) 0%, transparent 60%); }
+    .left-logo { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 1.5rem; color: white; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 3rem; }
+    .left-logo .badge { background: var(--primary-container); color: var(--on-primary-container); border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+    .left-headline h1 { font-size: 3rem; font-weight: 800; color: white; line-height: 1.05; letter-spacing: -0.03em; margin-bottom: 1rem; }
+    .left-headline p { color: rgba(255,255,255,0.7); font-size: 1rem; line-height: 1.7; margin-bottom: 2.5rem; }
+    .left-earnings { background: rgba(255,255,255,0.1); backdrop-filter: blur(12px); border-radius: 20px; padding: 1.5rem; }
+    .earnings-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.5); margin-bottom: 0.5rem; font-weight: 600; }
+    .earnings-amount { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 3rem; font-weight: 800; color: var(--primary-container); line-height: 1; margin-bottom: 0.25rem; }
+    .earnings-sub { font-size: 0.85rem; color: rgba(255,255,255,0.6); }
+    .velocity-bar { margin-top: 1.25rem; height: 8px; background: rgba(255,255,255,0.15); border-radius: 99px; overflow: hidden; }
+    .velocity-fill { height: 100%; width: 72%; background: var(--primary-container); border-radius: 99px; box-shadow: 0 0 12px rgba(63,255,139,0.5); }
+
+    /* RIGHT PANEL */
+    .right-panel { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 3rem; }
+    .login-box { width: 100%; max-width: 420px; }
+    .login-box h2 { font-size: 2rem; font-weight: 800; color: var(--on-surface); margin-bottom: 0.5rem; letter-spacing: -0.02em; }
+    .login-box .subtitle { font-size: 0.95rem; color: var(--on-surface-variant); margin-bottom: 2.5rem; line-height: 1.6; }
+    .social-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 0.875rem; border-radius: 14px; border: 1.5px solid var(--outline-variant); background: white; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; font-size: 0.95rem; cursor: pointer; margin-bottom: 0.75rem; color: var(--on-surface); transition: background 0.2s, border-color 0.2s; }
+    .social-btn:hover { background: var(--surface-low); border-color: var(--primary); }
+    .social-btn img { width: 20px; height: 20px; }
+    .divider { text-align: center; margin: 1.25rem 0; color: var(--on-surface-variant); font-size: 0.85rem; position: relative; }
+    .divider::before, .divider::after { content: ''; position: absolute; top: 50%; width: 42%; height: 1px; background: var(--outline-variant); }
+    .divider::before { left: 0; } .divider::after { right: 0; }
+    .input-group { margin-bottom: 1rem; }
+    .input-group label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--on-surface-variant); margin-bottom: 0.4rem; }
+    .input-group input { width: 100%; border: none; border-bottom: 2px solid var(--outline-variant); background: var(--surface-low); padding: 0.75rem 0.875rem; border-radius: 10px 10px 0 0; font-size: 1rem; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; color: var(--on-surface); outline: none; transition: border-color 0.2s; }
+    .input-group input:focus { border-color: var(--primary); }
+    .btn-submit { width: 100%; padding: 1rem; border-radius: 999px; border: none; background: linear-gradient(135deg, var(--primary) 0%, #005c2b 100%); color: white; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 1rem; cursor: pointer; margin-top: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: transform 0.2s, box-shadow 0.2s; }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,106,51,0.35); }
+    .terms { font-size: 0.78rem; color: var(--on-surface-variant); text-align: center; margin-top: 1.25rem; line-height: 1.6; }
+    .terms a { color: var(--primary); font-weight: 600; }
+    .signup-link { text-align: center; margin-top: 2rem; font-size: 0.875rem; color: var(--on-surface-variant); }
+    .signup-link a { color: var(--primary); font-weight: 700; }
+
+    @media (max-width: 768px) {
+      body { grid-template-columns: 1fr; }
+      .left-panel { display: none; }
+      .right-panel { padding: 2rem 1.5rem; justify-content: flex-start; padding-top: 4rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LEFT PANEL -->
+<div class="left-panel">
+  <div class="left-logo">
+    <div class="badge"><span class="material-symbols-outlined" style="font-size:20px">bolt</span></div>
+    GigGrab
+  </div>
+  <div class="left-headline">
+    <h1>Start<br/>Earning.</h1>
+    <p>Join the fleet. Move fast. Get paid instantly. No interviews. No resumes. Just opportunities.</p>
+    <div class="left-earnings">
+      <div class="earnings-label">Today's potential earnings</div>
+      <div class="earnings-amount">$127</div>
+      <div class="earnings-sub">Based on gigs available near you right now</div>
+      <div class="velocity-bar"><div class="velocity-fill"></div></div>
+    </div>
+  </div>
+  <div style="font-size:0.78rem;color:rgba(255,255,255,0.35)">© 2026 GigGrab</div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="right-panel">
+  <div class="login-box">
+    <h2>Welcome back.</h2>
+    <p class="subtitle">Join the fleet. Move fast. Get paid instantly.</p>
+
+    <button class="social-btn" id="btn-google">
+      <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Continue with Google
+    </button>
+    <button class="social-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#1D1D1F"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09z"/></svg>
+      Continue with Apple
+    </button>
+
+    <div class="divider">or</div>
+
+    <div class="input-group">
+      <label>Email address</label>
+      <input id="input-email" type="email" placeholder="you@example.com" autocomplete="email"/>
+    </div>
+    <div class="input-group">
+      <label>Password</label>
+      <input id="input-password" type="password" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+
+    <!-- Error message -->
+    <div id="auth-error" style="display:none;margin-top:0.75rem;padding:0.75rem 1rem;background:#fef2f2;border-radius:10px;color:#b31b25;font-size:0.85rem;font-weight:600;"></div>
+
+    <button class="btn-submit" id="btn-email-login">
+      <span class="material-symbols-outlined" style="font-size:20px">bolt</span>
+      Start Earning Now
+    </button>
+
+    <div class="terms">By continuing, you agree to GigGrab's <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.</div>
+    <div class="signup-link">Don't have an account? <a href="#">Sign up free →</a></div>
+  </div>
+</div>
+
+<script>
+  /* ── Supabase init ─────────────────────────────────────────────────────── */
+  const SUPABASE_URL      = 'https://xgqzuxosnypqohkqmkit.supabase.co'; // ← replace
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhncXp1eG9zbnlwcW9oa3Fta2l0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MDI1MTIsImV4cCI6MjA5MjE3ODUxMn0.Wj0hQ-KpZY02Pmeit5pcuuZ73ak1YDkm9mqqKngi0_c';                   // ← replace
+  const { createClient } = window.supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  /* Canonical feed URL — works both on file:// (dev) and a real domain */
+  const FEED_URL = 'feed.html';
+
+  /* ── 1. On load: if already logged in, skip to feed ────────────────────── */
+  (async () => {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) window.location.href = FEED_URL;
+  })();
+
+  /* ── Helper: show error ─────────────────────────────────────────────────── */
+  function showError(msg) {
+    const el = document.getElementById('auth-error');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+  function clearError() {
+    document.getElementById('auth-error').style.display = 'none';
+  }
+
+  /* ── 2. Google OAuth ────────────────────────────────────────────────────── */
+  document.getElementById('btn-google').addEventListener('click', async () => {
+    clearError();
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
+          ? window.location.origin + '/' + FEED_URL  // served via HTTP
+          : window.location.href.replace('login.html', FEED_URL), // file://
+      },
+    });
+    if (error) showError(error.message);
+  });
+
+  /* ── 3. Email + password sign-in ────────────────────────────────────────── */
+  document.getElementById('btn-email-login').addEventListener('click', async () => {
+    clearError();
+    const email    = document.getElementById('input-email').value.trim();
+    const password = document.getElementById('input-password').value;
+
+    if (!email || !password) { showError('Please enter your email and password.'); return; }
+
+    const btn = document.getElementById('btn-email-login');
+    btn.textContent = 'Signing in…';
+    btn.disabled = true;
+
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      showError(error.message);
+      btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:20px">bolt</span> Start Earning Now';
+      btn.disabled = false;
+    } else {
+      window.location.href = FEED_URL;
+    }
+  });
+
+  /* Allow Enter key to submit email form */
+  ['input-email', 'input-password'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('btn-email-login').click();
+    });
+  });
+</script>
+
+</body>
+</html>

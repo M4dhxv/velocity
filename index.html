@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GigGrab — Earn in the Next 30 Minutes</title>
+  <meta name="description" content="Tell us what you can do. We match you instantly. No resumes, no waiting. Start earning gig work right now."/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #006a33;
+      --primary-container: #3fff8b;
+      --on-primary: #cdffd3;
+      --on-primary-container: #005d2c;
+      --secondary: #006945;
+      --secondary-container: #74fbbb;
+      --tertiary: #006575;
+      --tertiary-container: #00dcfd;
+      --surface: #f6f6ff;
+      --surface-low: #eef0ff;
+      --surface-container: #e2e7ff;
+      --surface-high: #d9e2ff;
+      --surface-highest: #d1dcff;
+      --surface-lowest: #ffffff;
+      --on-surface: #272e42;
+      --on-surface-variant: #535b71;
+      --outline: #6f768e;
+      --outline-variant: #a5adc6;
+      --background: #f6f6ff;
+      --error: #b31b25;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Manrope', sans-serif; background: var(--background); color: var(--on-surface); overflow-x: hidden; }
+    h1,h2,h3,h4,h5 { font-family: 'Plus Jakarta Sans', sans-serif; }
+    a { text-decoration: none; color: inherit; }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(246,246,255,0.85); backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(165,173,198,0.2);
+      padding: 0 2rem; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-logo { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 1.25rem; color: var(--primary); display: flex; align-items: center; gap: 0.4rem; }
+    .nav-logo .bolt { background: var(--primary-container); color: var(--on-primary-container); border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .nav-links { display: flex; align-items: center; gap: 2rem; }
+    .nav-links a { font-size: 0.875rem; font-weight: 600; color: var(--on-surface-variant); transition: color 0.2s; }
+    .nav-links a:hover { color: var(--primary); }
+    .nav-cta { background: var(--primary); color: white; padding: 0.5rem 1.25rem; border-radius: 999px; font-size: 0.875rem; font-weight: 700; transition: transform 0.2s, box-shadow 0.2s; }
+    .nav-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,106,51,0.3); }
+    .hamburger { display: none; background: none; border: none; cursor: pointer; padding: 6px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--on-surface); margin: 4px 0; border-radius: 2px; transition: 0.3s; }
+    #mobile-menu { display: none; position: fixed; top: 64px; left: 0; right: 0; background: var(--surface-lowest); border-bottom: 1px solid var(--outline-variant); padding: 1rem 2rem; flex-direction: column; gap: 0; z-index: 99; }
+    #mobile-menu.open { display: flex; }
+    #mobile-menu a { padding: 0.875rem 0; border-bottom: 1px solid var(--surface-container); font-weight: 600; color: var(--on-surface-variant); }
+    #mobile-menu a:last-child { border-bottom: none; }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh; padding: 96px 2rem 4rem;
+      display: flex; align-items: center;
+      background: var(--surface-lowest);
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; top: -40%; right: -20%; width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(63,255,139,0.15) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .hero-inner { max-width: 1200px; margin: 0 auto; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--primary-container); color: var(--on-primary-container); padding: 0.375rem 0.875rem; border-radius: 999px; font-size: 0.8rem; font-weight: 700; margin-bottom: 1.5rem; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .hero-badge .material-symbols-outlined { font-size: 16px; }
+    .hero h1 { font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 800; line-height: 1.05; color: var(--on-surface); margin-bottom: 1.25rem; letter-spacing: -0.03em; }
+    .hero h1 span { color: var(--primary); }
+    .hero p { font-size: 1.125rem; color: var(--on-surface-variant); line-height: 1.7; margin-bottom: 2rem; max-width: 480px; }
+    .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .btn-primary { background: linear-gradient(135deg, var(--primary) 0%, #005c2b 100%); color: white; padding: 0.875rem 1.875rem; border-radius: 999px; font-weight: 700; font-size: 1rem; font-family: 'Plus Jakarta Sans', sans-serif; display: inline-flex; align-items: center; gap: 0.5rem; transition: transform 0.2s, box-shadow 0.2s; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,106,51,0.35); }
+    .btn-secondary { background: var(--surface-container); color: var(--on-surface); padding: 0.875rem 1.875rem; border-radius: 999px; font-weight: 700; font-size: 1rem; font-family: 'Plus Jakarta Sans', sans-serif; transition: transform 0.2s; }
+    .btn-secondary:hover { transform: translateY(-2px); background: var(--surface-high); }
+
+    /* ── LIVE FEED WIDGET ──────────────────────────────── */
+    .hero-visual { position: relative; }
+
+    .live-feed-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .live-label {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--on-surface-variant);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .live-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #22c55e;
+      box-shadow: 0 0 0 0 rgba(34,197,94,0.5);
+      animation: live-pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes live-pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+      60%  { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+      100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+    }
+    .live-count {
+      font-size: 0.75rem; font-weight: 700; color: var(--primary);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    /* Slot-machine viewport */
+    .feed-viewport {
+      position: relative;
+      height: 268px;        /* shows exactly 3 cards */
+      overflow: hidden;
+      /* top + bottom fade masks */
+      -webkit-mask-image: linear-gradient(
+        to bottom,
+        transparent 0%,
+        black 18%,
+        black 82%,
+        transparent 100%
+      );
+      mask-image: linear-gradient(
+        to bottom,
+        transparent 0%,
+        black 18%,
+        black 82%,
+        transparent 100%
+      );
+    }
+
+    /* The scrolling column */
+    .feed-track {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      transition: transform 0.55s cubic-bezier(0.33, 1, 0.68, 1);
+    }
+
+    /* Individual cards */
+    .fc {
+      background: var(--surface-lowest);
+      border-radius: 16px;
+      padding: 1rem 1.125rem;
+      display: flex; align-items: center; gap: 0.875rem;
+      box-shadow: 0 4px 24px rgba(39,46,66,0.08);
+      flex-shrink: 0;
+      opacity: 1;
+      transform: scale(1);
+      transition: opacity 0.45s ease, transform 0.45s ease;
+      cursor: pointer;
+    }
+    .fc:hover { transform: scale(1.015); }
+
+    /* First card: green gradient accent */
+    .fc.accent {
+      background: linear-gradient(135deg, #006a33 0%, #004d26 100%);
+      color: white;
+    }
+    .fc.accent .fc-pay { color: #3fff8b; }
+    .fc.accent .fc-title { color: #ffffff; }
+    .fc.accent .fc-label { color: rgba(255,255,255,0.65); }
+    .fc.accent .fc-icon { background: rgba(255,255,255,0.15); color: white; }
+    .fc.accent .fc-apply { background: rgba(255,255,255,0.15); color: white; }
+    .fc.accent .fc-apply:hover { background: rgba(255,255,255,0.25); }
+
+    .fc-icon {
+      width: 42px; height: 42px; border-radius: 12px;
+      background: var(--surface-container); color: var(--primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 21px; flex-shrink: 0;
+    }
+    .fc-body { flex: 1; min-width: 0; }
+    .fc-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700; font-size: 0.88rem;
+      color: var(--on-surface); white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+      margin-bottom: 0.3rem;
+    }
+    .fc-meta { display: flex; align-items: center; gap: 0.5rem; }
+    .fc-label {
+      font-size: 0.7rem; font-weight: 700;
+      padding: 0.18rem 0.5rem; border-radius: 6px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .label-hot  { background: #fff3e0; color: #c05300; }
+    .label-best { background: var(--primary-container); color: var(--on-primary-container); }
+    .label-new  { background: var(--tertiary-container); color: var(--tertiary); }
+    .label-quick { background: var(--secondary-container); color: var(--secondary); }
+    .fc-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem; flex-shrink: 0; }
+    .fc-pay {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800; font-size: 1rem;
+      color: var(--primary);
+    }
+    .fc-apply {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.72rem; font-weight: 700;
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      border: none; border-radius: 999px;
+      padding: 0.25rem 0.75rem;
+      cursor: pointer; white-space: nowrap;
+      transition: background 0.15s, transform 0.15s;
+    }
+    .fc-apply:hover { background: #2ef07a; transform: translateY(-1px); }
+
+    /* Entering card animation */
+    .fc.entering {
+      opacity: 0;
+      transform: scale(0.94) translateY(12px);
+    }
+
+    /* STATS */
+    .stats { background: var(--surface-low); padding: 4rem 2rem; }
+    .stats-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; text-align: center; }
+    .stat-number { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 3rem; font-weight: 800; color: var(--primary); line-height: 1; margin-bottom: 0.5rem; }
+    .stat-label { font-size: 0.875rem; color: var(--on-surface-variant); font-weight: 500; }
+
+    /* HOW IT WORKS */
+    .how { padding: 6rem 2rem; background: var(--surface-lowest); }
+    .section-header { text-align: center; margin-bottom: 4rem; }
+    .section-eyebrow { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--primary); margin-bottom: 0.75rem; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .section-title { font-size: clamp(1.75rem, 3.5vw, 2.75rem); font-weight: 800; color: var(--on-surface); letter-spacing: -0.02em; line-height: 1.15; }
+    .steps { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+    .step { background: var(--surface-lowest); border-radius: 20px; padding: 2rem; position: relative; box-shadow: 0 2px 20px rgba(39,46,66,0.06); }
+    .step-num { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 4rem; font-weight: 800; color: var(--surface-highest); line-height: 1; margin-bottom: 1rem; }
+    .step-icon { width: 52px; height: 52px; border-radius: 14px; background: var(--primary-container); color: var(--on-primary-container); display: flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 1.25rem; }
+    .step h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--on-surface); }
+    .step p { font-size: 0.9rem; color: var(--on-surface-variant); line-height: 1.6; }
+
+    /* CATEGORIES */
+    .categories { padding: 6rem 2rem; background: var(--surface-low); }
+    .cat-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; }
+    .cat-card { background: var(--surface-lowest); border-radius: 20px; padding: 1.75rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+    .cat-card:hover { transform: translateY(-4px) scale(0.98); box-shadow: 0 16px 40px rgba(39,46,66,0.1); }
+    .cat-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+    .cat-card:nth-child(1) .cat-icon { background: #e8faf0; color: var(--primary); }
+    .cat-card:nth-child(2) .cat-icon { background: #edfcff; color: var(--tertiary); }
+    .cat-card:nth-child(3) .cat-icon { background: #e8f7f2; color: var(--secondary); }
+    .cat-card:nth-child(4) .cat-icon { background: #fff8e6; color: #b45309; }
+    .cat-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 1rem; color: var(--on-surface); }
+    .cat-desc { font-size: 0.85rem; color: var(--on-surface-variant); line-height: 1.5; }
+
+    /* PRICING */
+    .pricing { padding: 6rem 2rem; background: var(--surface-lowest); }
+    .pricing-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; align-items: start; }
+    .plan { border-radius: 24px; padding: 2rem; position: relative; overflow: hidden; }
+    .plan.free { background: var(--surface-low); }
+    .plan.starter { background: var(--surface-lowest); box-shadow: 0 8px 40px rgba(39,46,66,0.1); border: 2px solid var(--primary-container); }
+    .plan.pro { background: linear-gradient(135deg, var(--primary) 0%, #005c2b 100%); color: white; }
+    .plan-badge { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; padding: 0.25rem 0.625rem; border-radius: 999px; background: var(--primary-container); color: var(--on-primary-container); display: inline-block; margin-bottom: 1rem; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .plan.pro .plan-badge { background: rgba(255,255,255,0.2); color: white; }
+    .plan-name { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 1.5rem; margin-bottom: 0.25rem; }
+    .plan-price { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 2.5rem; margin-bottom: 0.5rem; line-height: 1; }
+    .plan-price span { font-size: 1rem; font-weight: 500; opacity: 0.6; }
+    .plan-desc { font-size: 0.875rem; color: var(--on-surface-variant); margin-bottom: 1.5rem; }
+    .plan.pro .plan-desc { color: rgba(255,255,255,0.7); }
+    .plan-features { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.75rem; }
+    .plan-features li { display: flex; align-items: center; gap: 0.625rem; font-size: 0.9rem; font-weight: 500; }
+    .plan-features li .material-symbols-outlined { font-size: 18px; color: var(--primary); flex-shrink: 0; }
+    .plan.pro .plan-features li .material-symbols-outlined { color: var(--primary-container); }
+    .plan-btn { width: 100%; padding: 0.875rem; border-radius: 999px; font-weight: 700; font-size: 0.95rem; font-family: 'Plus Jakarta Sans', sans-serif; cursor: pointer; border: none; transition: transform 0.2s, box-shadow 0.2s; }
+    .plan-btn:hover { transform: translateY(-2px); }
+    .plan.free .plan-btn { background: var(--surface-container); color: var(--on-surface); }
+    .plan.starter .plan-btn { background: var(--primary); color: white; box-shadow: 0 6px 20px rgba(0,106,51,0.3); }
+    .plan.pro .plan-btn { background: var(--primary-container); color: var(--on-primary-container); }
+    .popular-tag { position: absolute; top: 1.25rem; right: 1.25rem; background: var(--primary-container); color: var(--on-primary-container); font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 999px; }
+
+    /* CTA STRIP */
+    .cta-strip { background: linear-gradient(135deg, var(--primary) 0%, #003d1c 100%); padding: 5rem 2rem; text-align: center; position: relative; overflow: hidden; }
+    .cta-strip::before { content: ''; position: absolute; top: -50%; left: -20%; width: 600px; height: 600px; background: radial-gradient(circle, rgba(63,255,139,0.15) 0%, transparent 60%); pointer-events: none; }
+    .cta-strip h2 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: white; margin-bottom: 1rem; letter-spacing: -0.025em; }
+    .cta-strip p { color: rgba(255,255,255,0.7); font-size: 1.1rem; margin-bottom: 2.5rem; max-width: 500px; margin-left: auto; margin-right: auto; }
+    .cta-strip .btn-cta { background: var(--primary-container); color: var(--on-primary-container); padding: 1rem 2.5rem; border-radius: 999px; font-weight: 800; font-size: 1.05rem; font-family: 'Plus Jakarta Sans', sans-serif; display: inline-flex; align-items: center; gap: 0.5rem; transition: transform 0.2s, box-shadow 0.2s; }
+    .cta-strip .btn-cta:hover { transform: translateY(-2px); box-shadow: 0 12px 35px rgba(63,255,139,0.4); }
+
+    /* FOOTER */
+    footer { background: var(--on-surface); color: rgba(255,255,255,0.7); padding: 3.5rem 2rem; }
+    .footer-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem; }
+    .footer-brand .logo { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 1.5rem; color: white; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+    .footer-brand .logo-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--primary-container); }
+    .footer-brand p { font-size: 0.875rem; line-height: 1.7; max-width: 280px; }
+    .footer-col h4 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; color: white; margin-bottom: 1rem; font-size: 0.9rem; }
+    .footer-col a { display: block; font-size: 0.875rem; margin-bottom: 0.625rem; transition: color 0.2s; }
+    .footer-col a:hover { color: var(--primary-container); }
+    .footer-bottom { max-width: 1200px; margin: 2.5rem auto 0; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; flex-wrap: wrap; gap: 0.5rem; }
+    .footer-bottom a { color: rgba(255,255,255,0.5); margin-left: 1.5rem; }
+    .footer-bottom a:hover { color: var(--primary-container); }
+
+    /* RESPONSIVE */
+    @media (max-width: 1024px) {
+      .hero-inner { grid-template-columns: 1fr; }
+      .hero-visual { display: none; }
+      .cat-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .nav-links, .nav-cta { display: none; }
+      .hamburger { display: flex; flex-direction: column; }
+      .stats-inner { grid-template-columns: 1fr; gap: 2.5rem; }
+      .steps { grid-template-columns: 1fr; }
+      .pricing-grid { grid-template-columns: 1fr; }
+      .footer-inner { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 480px) {
+      .cat-grid { grid-template-columns: 1fr; }
+      .footer-inner { grid-template-columns: 1fr; }
+      .hero-actions { flex-direction: column; }
+      nav { padding: 0 1.25rem; }
+      .hero { padding: 88px 1.25rem 3rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/" class="nav-logo">
+    <div class="bolt"><span class="material-symbols-outlined" style="font-size:18px">bolt</span></div>
+    GigGrab
+  </a>
+  <div class="nav-links">
+    <a href="feed.html">Browse Gigs</a>
+    <a href="pricing.html">Pricing</a>
+    <a href="about.html">How It Works</a>
+  </div>
+  <a href="login.html" class="nav-cta">Start Earning →</a>
+  <button class="hamburger" id="hamburger-btn" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div id="mobile-menu">
+  <a href="feed.html">Browse Gigs</a>
+  <a href="pricing.html">Pricing</a>
+  <a href="about.html">How It Works</a>
+  <a href="login.html" style="color:var(--primary);font-weight:700;">Start Earning →</a>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-content">
+      <div class="hero-badge"><span class="material-symbols-outlined">bolt</span> Live gigs available now</div>
+      <h1>Earn in the next <span>30 minutes.</span></h1>
+      <p>Tell us what you can do. We match you instantly. No resumes, no waiting. Your next payout is one tap away.</p>
+      <div class="hero-actions">
+        <a href="login.html" class="btn-primary">Start Earning →</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="live-feed-header">
+        <div class="live-label">
+          <div class="live-dot"></div>
+          Live matches
+        </div>
+        <div class="live-count" id="live-count">237 available</div>
+      </div>
+
+      <div class="feed-viewport">
+        <div class="feed-track" id="feed-track">
+          <!-- Cards injected by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="stats">
+  <div class="stats-inner">
+    <div>
+      <div class="stat-number">$24.50</div>
+      <div class="stat-label">Average hourly rate on GigGrab</div>
+    </div>
+    <div>
+      <div class="stat-number">4 min</div>
+      <div class="stat-label">Average time to first match</div>
+    </div>
+    <div>
+      <div class="stat-number">94K+</div>
+      <div class="stat-label">Active gig workers earning</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how">
+  <div class="section-header">
+    <div class="section-eyebrow">How it works</div>
+    <h2 class="section-title">Three steps to your first payout</h2>
+  </div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-icon"><span class="material-symbols-outlined">person_edit</span></div>
+      <h3>Tell us your skills</h3>
+      <p>Set your availability, skills, and location. Our engine builds your profile in under 60 seconds via voice or text.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-icon"><span class="material-symbols-outlined">bolt</span></div>
+      <h3>Match instantly</h3>
+      <p>Our AI engine scans live gig postings and surfaces the best matches for your skills right now — not tomorrow.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-icon"><span class="material-symbols-outlined">account_balance_wallet</span></div>
+      <h3>Start earning</h3>
+      <p>Complete the task, confirm delivery, and get paid fast — directly to your wallet. No invoice. No waiting 30 days.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CATEGORIES -->
+<section class="categories">
+  <div class="section-header">
+    <div class="section-eyebrow">Categories</div>
+    <h2 class="section-title">What do you want to earn from?</h2>
+  </div>
+  <div class="cat-grid">
+    <div class="cat-card">
+      <div class="cat-icon"><span class="material-symbols-outlined">videocam</span></div>
+      <div class="cat-title">Content</div>
+      <div class="cat-desc">Photos, videos, and social media tasks for local businesses.</div>
+    </div>
+    <div class="cat-card">
+      <div class="cat-icon"><span class="material-symbols-outlined">wifi</span></div>
+      <div class="cat-title">Remote</div>
+      <div class="cat-desc">Translate, data entry, and digital tasks from anywhere.</div>
+    </div>
+    <div class="cat-card">
+      <div class="cat-icon"><span class="material-symbols-outlined">location_on</span></div>
+      <div class="cat-title">Local</div>
+      <div class="cat-desc">Deliveries, mystery shopping, and pop-up events near you.</div>
+    </div>
+    <div class="cat-card">
+      <div class="cat-icon"><span class="material-symbols-outlined">timer</span></div>
+      <div class="cat-title">Quick Tasks</div>
+      <div class="cat-desc">Under 15 minutes. Instant payout. Perfect for gaps in your day.</div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="section-header">
+    <div class="section-eyebrow">Pricing</div>
+    <h2 class="section-title">Your next payout is waiting</h2>
+  </div>
+  <div class="pricing-grid">
+    <!-- Free -->
+    <div class="plan free">
+      <div class="plan-badge">Free Forever</div>
+      <div class="plan-name">Free</div>
+      <div class="plan-price">$0<span>/mo</span></div>
+      <div class="plan-desc">For first-timers just getting started.</div>
+      <ul class="plan-features">
+        <li><span class="material-symbols-outlined">check_circle</span> 3 gig matches total</li>
+        <li><span class="material-symbols-outlined">check_circle</span> 1 gig grab</li>
+        <li><span class="material-symbols-outlined">check_circle</span> Basic profile</li>
+      </ul>
+      <a href="login.html"><button class="plan-btn">Get Started</button></a>
+    </div>
+    <!-- Starter -->
+    <div class="plan starter">
+      <div class="popular-tag">Most Popular</div>
+      <div class="plan-badge">Starter</div>
+      <div class="plan-name">Starter</div>
+      <div class="plan-price">$9<span>/mo</span></div>
+      <div class="plan-desc">For side-hustlers building momentum.</div>
+      <ul class="plan-features">
+        <li><span class="material-symbols-outlined">check_circle</span> 100 gigs/month</li>
+        <li><span class="material-symbols-outlined">check_circle</span> Auto-apply to gigs</li>
+        <li><span class="material-symbols-outlined">check_circle</span> Faster matching</li>
+        <li><span class="material-symbols-outlined">check_circle</span> Earnings dashboard</li>
+      </ul>
+      <a href="login.html"><button class="plan-btn">Upgrade to Starter</button></a>
+    </div>
+    <!-- Pro -->
+    <div class="plan pro">
+      <div class="plan-badge">Pro</div>
+      <div class="plan-name">Pro</div>
+      <div class="plan-price" style="color:white">$29<span>/mo</span></div>
+      <div class="plan-desc">For full-time gig workers maximising earnings.</div>
+      <ul class="plan-features">
+        <li><span class="material-symbols-outlined">check_circle</span> 250 gigs/month</li>
+        <li><span class="material-symbols-outlined">check_circle</span> Priority matching</li>
+        <li><span class="material-symbols-outlined">check_circle</span> Higher-paying gigs surfaced first</li>
+        <li><span class="material-symbols-outlined">check_circle</span> Velocity AI assistant</li>
+        <li><span class="material-symbols-outlined">check_circle</span> Dedicated support</li>
+      </ul>
+      <a href="login.html"><button class="plan-btn">Go Pro</button></a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA STRIP -->
+<section class="cta-strip">
+  <h2>Your next payout is waiting.</h2>
+  <p>Join 94,000+ workers already earning on GigGrab right now.</p>
+  <a href="login.html" class="btn-cta"><span class="material-symbols-outlined" style="font-size:20px">bolt</span> Start Earning Free</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="logo"><div class="logo-dot"></div>GigGrab</div>
+      <p>The fastest way to find gig work near you and start earning today. No interviews. No waiting.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <a href="feed.html">Browse Gigs</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="about.html">How It Works</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="#">Careers</a>
+      <a href="#">Blog</a>
+      <a href="#">Contact</a>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+      <a href="#">Help Center</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 GigGrab. All rights reserved.</span>
+    <div>
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="#">API Status</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  /* ── Hamburger ── */
+  const btn = document.getElementById('hamburger-btn');
+  const menu = document.getElementById('mobile-menu');
+  btn.addEventListener('click', () => menu.classList.toggle('open'));
+
+  /* ── Live Feed Slot Machine ── */
+  const GIG_DATA = [
+    { icon: 'videocam',           title: 'Earn $45 shooting café reels',        label: '🔥 Hot match',  labelCls: 'label-hot',   pay: '$45',  accent: false },
+    { icon: 'translate',          title: 'Translate listings EN → ES',           label: '⚡ Best match', labelCls: 'label-best',  pay: '$28',  accent: false },
+    { icon: 'psychology',         title: 'AI image labeling task',               label: '⚡ Best match', labelCls: 'label-best',  pay: '$18',  accent: false },
+    { icon: 'storefront',         title: 'Mystery shopper — Electronics',        label: '🔥 Hot match',  labelCls: 'label-hot',   pay: '$32',  accent: false },
+    { icon: 'local_shipping',     title: 'Event-day package runner',             label: '🆕 New',        labelCls: 'label-new',   pay: '$60',  accent: false },
+    { icon: 'edit_note',          title: 'Write 5 blog posts (tech)',             label: '⚡ Best match', labelCls: 'label-best',  pay: '$90',  accent: false },
+    { icon: 'photo_camera',       title: 'Product photography — home studio',    label: '🔥 Hot match',  labelCls: 'label-hot',   pay: '$55',  accent: false },
+    { icon: 'record_voice_over',  title: 'Voice-over 60s commercial script',     label: '⚡ Quick',      labelCls: 'label-quick', pay: '$35',  accent: false },
+    { icon: 'directions_bike',    title: 'Grocery delivery — 3 drops',           label: '🔥 Hot match',  labelCls: 'label-hot',   pay: '$27',  accent: false },
+    { icon: 'draw',               title: 'Custom logo for small café',           label: '⚡ Best match', labelCls: 'label-best',  pay: '$80',  accent: false },
+    { icon: 'headphones',         title: 'Transcribe 20-min podcast',            label: '⚡ Quick',      labelCls: 'label-quick', pay: '$22',  accent: false },
+    { icon: 'star',               title: 'Test new app — write review',          label: '⚡ Quick',      labelCls: 'label-quick', pay: '$15',  accent: false },
+  ];
+
+  const CARD_HEIGHT  = 80;   /* px — must match rendered card */
+  const GAP          = 12;   /* px — gap between cards (0.75rem) */
+  const STRIDE       = CARD_HEIGHT + GAP;
+  const VISIBLE      = 3;    /* cards in viewport */
+  const INTERVAL_MS  = 1800; /* ms between advances */
+
+  const track    = document.getElementById('feed-track');
+  const countEl  = document.getElementById('live-count');
+  let   gigIndex = 0; /* next gig to append */
+  let   offset   = 0; /* how many cards have been removed from top */
+
+  function makeCard(data, isFirstBatch) {
+    const card = document.createElement('div');
+    card.className = 'fc' + (data.accent ? ' accent' : '') + (isFirstBatch ? '' : ' entering');
+    card.innerHTML = `
+      <div class="fc-icon"><span class="material-symbols-outlined">${data.icon}</span></div>
+      <div class="fc-body">
+        <div class="fc-title">${data.title}</div>
+        <div class="fc-meta">
+          <span class="fc-label ${data.labelCls}">${data.label}</span>
+        </div>
+      </div>
+      <div class="fc-right">
+        <div class="fc-pay">${data.pay}</div>
+        <button class="fc-apply">Apply</button>
+      </div>`;
+    return card;
+  }
+
+  /* Seed the track with VISIBLE + 1 cards (buffer for smooth first transition) */
+  for (let i = 0; i < VISIBLE + 1; i++) {
+    const card = makeCard(GIG_DATA[gigIndex % GIG_DATA.length], true);
+    track.appendChild(card);
+    gigIndex++;
+  }
+
+  /* Position track so cards 0..VISIBLE-1 are visible, card VISIBLE is clipped below */
+  track.style.transform = 'translateY(0px)';
+
+  function tick() {
+    /* 1. Slide track up by one stride */
+    offset++;
+    track.style.transform = `translateY(-${offset * STRIDE}px)`;
+
+    /* 2. Append next card below (entering state = invisible + scaled down) */
+    const newCard = makeCard(GIG_DATA[gigIndex % GIG_DATA.length], false);
+    track.appendChild(newCard);
+    gigIndex++;
+
+    /* 3. Trigger enter animation on next frame */
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => newCard.classList.remove('entering'));
+    });
+
+    /* 4. Fade out + remove top card after transition completes */
+    const topCard = track.children[0];
+    topCard.style.opacity    = '0';
+    topCard.style.transform  = 'scale(0.92) translateY(-10px)';
+    topCard.style.transition = 'opacity 0.45s ease, transform 0.45s ease';
+
+    setTimeout(() => {
+      if (topCard.parentNode === track) track.removeChild(topCard);
+      /* Compensate offset so translateY stays correct after DOM removal */
+      offset--;
+      track.style.transition = 'none';
+      track.style.transform  = `translateY(-${offset * STRIDE}px)`;
+      /* Re-enable transition on next frame */
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          track.style.transition = 'transform 0.55s cubic-bezier(0.33, 1, 0.68, 1)';
+        });
+      });
+    }, 600);
+
+    /* 5. Animate live count number (cosmetic) */
+    const base = 237;
+    const jitter = Math.floor(Math.random() * 5) - 2;
+    countEl.textContent = (base + (gigIndex % 8) + jitter) + ' available';
+  }
+
+  /* Restore transition after DOM is settled */
+  requestAnimationFrame(() => {
+    track.style.transition = 'transform 0.55s cubic-bezier(0.33, 1, 0.68, 1)';
+  });
+
+  setInterval(tick, INTERVAL_MS);
+</script>
+</body>
+</html>

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Live Gig Feed — GigGrab</title>
+  <meta name="description" content="Browse live gig opportunities near you. Instant match, instant pay."/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #006a33; --primary-container: #3fff8b; --on-primary-container: #005d2c;
+      --secondary: #006945; --secondary-container: #74fbbb;
+      --tertiary: #006575; --tertiary-container: #00dcfd;
+      --surface: #f6f6ff; --surface-low: #eef0ff; --surface-container: #e2e7ff;
+      --surface-high: #d9e2ff; --surface-highest: #d1dcff; --surface-lowest: #ffffff;
+      --on-surface: #272e42; --on-surface-variant: #535b71; --outline: #6f768e; --outline-variant: #a5adc6;
+    }
+    body { font-family: 'Manrope', sans-serif; background: var(--surface); color: var(--on-surface); overflow-x: hidden; }
+    h1,h2,h3,h4 { font-family: 'Plus Jakarta Sans', sans-serif; }
+    a { text-decoration: none; color: inherit; }
+
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(246,246,255,0.9); backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(165,173,198,0.2);
+      padding: 0 2rem; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-logo { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 1.25rem; color: var(--primary); display: flex; align-items: center; gap: 0.4rem; }
+    .nav-logo .badge { background: var(--primary-container); color: var(--on-primary-container); border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
+    .nav-links { display: flex; gap: 1.5rem; }
+    .nav-links a { font-size: 0.875rem; font-weight: 600; color: var(--on-surface-variant); transition: color 0.2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--primary); }
+    .nav-right { display: flex; align-items: center; gap: 1rem; }
+    .earnings-pill { background: var(--primary-container); color: var(--on-primary-container); padding: 0.35rem 0.875rem; border-radius: 999px; font-weight: 800; font-size: 0.9rem; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .hamburger { display: none; background: none; border: none; cursor: pointer; flex-direction: column; gap: 4px; padding: 6px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--on-surface); border-radius: 2px; }
+    #mobile-menu { display: none; position: fixed; top: 64px; left: 0; right: 0; background: var(--surface-lowest); border-bottom: 1px solid var(--outline-variant); padding: 1rem 2rem; flex-direction: column; z-index: 99; }
+    #mobile-menu.open { display: flex; }
+    #mobile-menu a { padding: 0.875rem 0; border-bottom: 1px solid var(--surface-container); font-weight: 600; color: var(--on-surface-variant); }
+
+    /* PAGE HERO */
+    .feed-hero { background: var(--surface-lowest); padding: 2.5rem 2rem 2rem; border-bottom: 1px solid var(--surface-container); }
+    .feed-hero-inner { max-width: 1200px; margin: 0 auto; }
+    .live-badge { display: inline-flex; align-items: center; gap: 0.4rem; background: var(--primary-container); color: var(--on-primary-container); padding: 0.3rem 0.75rem; border-radius: 999px; font-size: 0.78rem; font-weight: 700; margin-bottom: 1rem; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--primary); animation: pulse-dot 1.5s infinite; }
+    @keyframes pulse-dot { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+    .feed-hero h1 { font-size: clamp(1.75rem, 3vw, 2.5rem); font-weight: 800; margin-bottom: 0.75rem; letter-spacing: -0.02em; }
+    .feed-hero p { color: var(--on-surface-variant); font-size: 1rem; margin-bottom: 1.5rem; }
+
+    /* FILTERS */
+    .filters { display: flex; gap: 0.625rem; flex-wrap: wrap; }
+    .filter-chip { padding: 0.45rem 1rem; border-radius: 999px; font-size: 0.82rem; font-weight: 700; cursor: pointer; border: 1.5px solid var(--outline-variant); background: var(--surface-lowest); color: var(--on-surface-variant); transition: all 0.15s; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .filter-chip:hover { border-color: var(--primary); color: var(--primary); }
+    .filter-chip.active { background: var(--primary); border-color: var(--primary); color: white; }
+    .filter-chip.tertiary { background: var(--tertiary-container); border-color: var(--tertiary-container); color: var(--tertiary); }
+
+    /* LAYOUT */
+    .feed-layout { max-width: 1200px; margin: 0 auto; padding: 2rem; display: grid; grid-template-columns: 1fr 360px; gap: 2rem; align-items: start; }
+
+    /* GIG CARDS */
+    .gig-list { display: flex; flex-direction: column; gap: 1rem; }
+    .gig-card-full { background: var(--surface-lowest); border-radius: 20px; padding: 1.5rem; display: flex; gap: 1.25rem; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; border: 1.5px solid transparent; }
+    .gig-card-full:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(39,46,66,0.1); border-color: var(--surface-container); }
+    .gig-card-full.featured-card { border-color: var(--primary-container); background: linear-gradient(135deg, #f0fff7 0%, var(--surface-lowest) 100%); }
+    .gig-card-icon { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; }
+    .icon-green { background: #e8faf0; color: var(--primary); }
+    .icon-teal { background: #edfcff; color: var(--tertiary); }
+    .icon-mint { background: #e8f7f2; color: var(--secondary); }
+    .icon-amber { background: #fff8e6; color: #b45309; }
+    .icon-purple { background: #f3f0ff; color: #7c3aed; }
+    .gig-card-body { flex: 1; }
+    .gig-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
+    .gig-card-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 1.05rem; color: var(--on-surface); }
+    .gig-pay-big { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 1.25rem; color: var(--primary); white-space: nowrap; }
+    .gig-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+    .tag { font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 6px; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .tag-remote { background: var(--tertiary-container); color: var(--tertiary); }
+    .tag-local { background: var(--secondary-container); color: var(--secondary); }
+    .tag-quick { background: #fff8e6; color: #b45309; }
+    .tag-new { background: var(--primary-container); color: var(--on-primary-container); }
+    .gig-desc { font-size: 0.875rem; color: var(--on-surface-variant); line-height: 1.6; margin-bottom: 1rem; }
+    .gig-footer { display: flex; justify-content: space-between; align-items: center; }
+    .gig-meta-row { display: flex; align-items: center; gap: 1rem; font-size: 0.8rem; color: var(--on-surface-variant); }
+    .gig-meta-item { display: flex; align-items: center; gap: 0.3rem; }
+    .gig-meta-item .material-symbols-outlined { font-size: 14px; }
+    .grab-btn { background: var(--primary-container); color: var(--on-primary-container); padding: 0.5rem 1.25rem; border-radius: 999px; font-weight: 700; font-size: 0.85rem; font-family: 'Plus Jakarta Sans', sans-serif; border: none; cursor: pointer; transition: transform 0.15s; display: flex; align-items: center; gap: 0.35rem; }
+    .grab-btn:hover { transform: translateY(-2px); }
+    .grab-btn .material-symbols-outlined { font-size: 16px; }
+
+    /* SIDEBAR */
+    .sidebar { display: flex; flex-direction: column; gap: 1.25rem; }
+    .sidebar-card { background: var(--surface-lowest); border-radius: 20px; padding: 1.5rem; }
+    .sidebar-card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 1rem; color: var(--on-surface); }
+    .earnings-display { text-align: center; padding: 0.5rem 0; }
+    .big-earn { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 3rem; font-weight: 800; color: var(--primary); line-height: 1; }
+    .earn-label { font-size: 0.8rem; color: var(--on-surface-variant); margin-top: 0.25rem; }
+    .progress-track { height: 8px; background: var(--surface-container); border-radius: 99px; margin: 1rem 0 0.5rem; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 99px; background: var(--primary-container); box-shadow: 0 0 8px rgba(63,255,139,0.4); }
+    .progress-label { font-size: 0.78rem; color: var(--on-surface-variant); display: flex; justify-content: space-between; }
+    .upgrade-card { background: linear-gradient(135deg, var(--primary) 0%, #005c2b 100%); border-radius: 20px; padding: 1.5rem; color: white; }
+    .upgrade-card h3 { color: white; margin-bottom: 0.5rem; }
+    .upgrade-card p { font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-bottom: 1.25rem; line-height: 1.6; }
+    .upgrade-btn { background: var(--primary-container); color: var(--on-primary-container); padding: 0.625rem 1.25rem; border-radius: 999px; font-weight: 800; font-size: 0.875rem; font-family: 'Plus Jakarta Sans', sans-serif; cursor: pointer; border: none; width: 100%; transition: transform 0.15s; }
+    .upgrade-btn:hover { transform: translateY(-2px); }
+
+    @media (max-width: 1024px) { .feed-layout { grid-template-columns: 1fr; } .sidebar { display: none; } }
+    @media (max-width: 768px) { .nav-links, .nav-right { display: none; } .hamburger { display: flex; } nav { padding: 0 1.25rem; } .feed-hero { padding: 1.5rem; } .filters { gap: 0.5rem; } }
+    @media (max-width: 480px) { .gig-card-full { flex-direction: column; } .gig-card-icon { width: 44px; height: 44px; font-size: 22px; } .feed-layout { padding: 1.25rem; gap: 1.25rem; } }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">
+    <div class="badge"><span class="material-symbols-outlined" style="font-size:18px">bolt</span></div>
+    GigGrab
+  </a>
+  <div class="nav-links">
+    <a href="feed.html" class="active">Browse Gigs</a>
+    <a href="pricing.html">Pricing</a>
+    <a href="about.html">How It Works</a>
+  </div>
+  <div class="nav-right">
+    <div class="earnings-pill">$0.00 today</div>
+    <!-- Replaced by JS with user info + logout -->
+    <div id="nav-auth">
+      <a href="login.html" style="background:var(--primary);color:white;padding:0.5rem 1.25rem;border-radius:999px;font-weight:700;font-size:0.875rem;">Sign In</a>
+    </div>
+  </div>
+  <button class="hamburger" id="hamburger-btn"><span></span><span></span><span></span></button>
+</nav>
+<div id="mobile-menu">
+  <a href="feed.html">Browse Gigs</a>
+  <a href="pricing.html">Pricing</a>
+  <a href="about.html">How It Works</a>
+  <a href="login.html" style="color:var(--primary);font-weight:700;">Sign In</a>
+</div>
+
+<!-- FEED HERO -->
+<div class="feed-hero">
+  <div class="feed-hero-inner">
+    <div class="live-badge"><div class="live-dot"></div> 237 gigs live now</div>
+    <h1>Gig Feed — Earn Right Now</h1>
+    <p>Matched to your skills and location. Grab one before it's gone.</p>
+    <div class="filters">
+      <button class="filter-chip active">All Gigs</button>
+      <button class="filter-chip tertiary">⚡ Quick Tasks</button>
+      <button class="filter-chip">📸 Content</button>
+      <button class="filter-chip">🌐 Remote</button>
+      <button class="filter-chip">📍 Local</button>
+      <button class="filter-chip">💰 High Pay</button>
+    </div>
+  </div>
+</div>
+
+<!-- FEED LAYOUT -->
+<div class="feed-layout">
+  <div class="gig-list">
+
+    <div class="gig-card-full featured-card">
+      <div class="gig-card-icon icon-green"><span class="material-symbols-outlined">videocam</span></div>
+      <div class="gig-card-body">
+        <div class="gig-card-header">
+          <div class="gig-card-title">Shoot content for local café</div>
+          <div class="gig-pay-big">$45</div>
+        </div>
+        <div class="gig-tags">
+          <span class="tag tag-local">Local</span>
+          <span class="tag tag-new">New</span>
+          <span class="tag tag-quick">⚡ Quick</span>
+        </div>
+        <div class="gig-desc">Capture 10 photos + 2 short reels of the café interior and new seasonal menu items. Delivered within 2 hours.</div>
+        <div class="gig-footer">
+          <div class="gig-meta-row">
+            <div class="gig-meta-item"><span class="material-symbols-outlined">schedule</span> 15 mins away</div>
+            <div class="gig-meta-item"><span class="material-symbols-outlined">timer</span> ~90 min task</div>
+          </div>
+          <button class="grab-btn"><span class="material-symbols-outlined">bolt</span> Grab It</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="gig-card-full">
+      <div class="gig-card-icon icon-teal"><span class="material-symbols-outlined">translate</span></div>
+      <div class="gig-card-body">
+        <div class="gig-card-header">
+          <div class="gig-card-title">Translate product listings (EN → ES)</div>
+          <div class="gig-pay-big">$28</div>
+        </div>
+        <div class="gig-tags"><span class="tag tag-remote">Remote</span></div>
+        <div class="gig-desc">Translate 15 e-commerce product descriptions from English to Spanish. Native speaker preferred.</div>
+        <div class="gig-footer">
+          <div class="gig-meta-row">
+            <div class="gig-meta-item"><span class="material-symbols-outlined">public</span> Remote</div>
+            <div class="gig-meta-item"><span class="material-symbols-outlined">timer</span> ~2 hr task</div>
+          </div>
+          <button class="grab-btn"><span class="material-symbols-outlined">bolt</span> Grab It</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="gig-card-full">
+      <div class="gig-card-icon icon-purple"><span class="material-symbols-outlined">psychology</span></div>
+      <div class="gig-card-body">
+        <div class="gig-card-header">
+          <div class="gig-card-title">AI data labeling — image classification</div>
+          <div class="gig-pay-big">$18</div>
+        </div>
+        <div class="gig-tags"><span class="tag tag-remote">Remote</span><span class="tag tag-quick">⚡ Quick</span></div>
+        <div class="gig-desc">Label 200 images for an AI training dataset. Simple click-based interface. No experience needed.</div>
+        <div class="gig-footer">
+          <div class="gig-meta-row">
+            <div class="gig-meta-item"><span class="material-symbols-outlined">public</span> Remote</div>
+            <div class="gig-meta-item"><span class="material-symbols-outlined">timer</span> ~45 min task</div>
+          </div>
+          <button class="grab-btn"><span class="material-symbols-outlined">bolt</span> Grab It</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="gig-card-full">
+      <div class="gig-card-icon icon-mint"><span class="material-symbols-outlined">storefront</span></div>
+      <div class="gig-card-body">
+        <div class="gig-card-header">
+          <div class="gig-card-title">Mystery shopper — Electronics store</div>
+          <div class="gig-pay-big">$32</div>
+        </div>
+        <div class="gig-tags"><span class="tag tag-local">Local</span></div>
+        <div class="gig-desc">Visit the store, interact with staff, evaluate customer experience, and submit a structured report.</div>
+        <div class="gig-footer">
+          <div class="gig-meta-row">
+            <div class="gig-meta-item"><span class="material-symbols-outlined">location_on</span> 2.1 mi away</div>
+            <div class="gig-meta-item"><span class="material-symbols-outlined">timer</span> ~1 hr task</div>
+          </div>
+          <button class="grab-btn"><span class="material-symbols-outlined">bolt</span> Grab It</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="gig-card-full">
+      <div class="gig-card-icon icon-amber"><span class="material-symbols-outlined">local_shipping</span></div>
+      <div class="gig-card-body">
+        <div class="gig-card-header">
+          <div class="gig-card-title">Event-day package runner — Downtown</div>
+          <div class="gig-pay-big">$60</div>
+        </div>
+        <div class="gig-tags"><span class="tag tag-local">Local</span></div>
+        <div class="gig-desc">Pick up and deliver 4 vendor packages to event venue. Car required. Tips included.</div>
+        <div class="gig-footer">
+          <div class="gig-meta-row">
+            <div class="gig-meta-item"><span class="material-symbols-outlined">location_on</span> 3.7 mi away</div>
+            <div class="gig-meta-item"><span class="material-symbols-outlined">timer</span> ~3 hr task</div>
+          </div>
+          <button class="grab-btn"><span class="material-symbols-outlined">bolt</span> Grab It</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-card">
+      <h3>Today's Potential</h3>
+      <div class="earnings-display">
+        <div class="big-earn">$127</div>
+        <div class="earn-label">Available right now near you</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:72%"></div></div>
+      <div class="progress-label"><span>$0 earned</span><span>$127 available</span></div>
+    </div>
+
+    <div class="upgrade-card">
+      <h3>You've unlocked your first gig.</h3>
+      <p>Want more opportunities? Upgrade to keep the engine running.</p>
+      <button class="upgrade-btn" onclick="window.location='pricing.html'">View Pricing →</button>
+    </div>
+
+    <div class="sidebar-card">
+      <h3>Invite friends, earn more</h3>
+      <p style="font-size:0.875rem;color:var(--on-surface-variant);line-height:1.6;margin-bottom:1rem">Invite 3 friends and unlock 3 more matches for free.</p>
+      <button style="width:100%;padding:0.625rem;border-radius:999px;border:1.5px solid var(--primary);background:transparent;color:var(--primary);font-weight:700;font-size:0.875rem;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">Share Invite Link</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ── Supabase init ──────────────────────────────────────────────────── */
+  const SUPABASE_URL      = 'https://xgqzuxosnypqohkqmkit.supabase.co'; // ← replace
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhncXp1eG9zbnlwcW9oa3Fta2l0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MDI1MTIsImV4cCI6MjA5MjE3ODUxMn0.Wj0hQ-KpZY02Pmeit5pcuuZ73ak1YDkm9mqqKngi0_c';                   // ← replace
+  const { createClient } = window.supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  /* ── 1. Session guard: redirect if not logged in ────────────────────── */
+  (async () => {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      window.location.href = 'login.html';
+      return;
+    }
+    renderUser(session.user);
+  })();
+
+  /* ── 2. Render user info in nav ────────────────────────────────────── */
+  function renderUser(user) {
+    const name   = user.user_metadata?.full_name || user.email.split('@')[0];
+    const avatar = user.user_metadata?.avatar_url;
+    const navAuth = document.getElementById('nav-auth');
+    navAuth.innerHTML = `
+      <div style="display:flex;align-items:center;gap:0.625rem;">
+        ${ avatar
+          ? `<img src="${avatar}" alt="${name}" style="width:32px;height:32px;border-radius:50%;border:2px solid var(--primary-container);">`
+          : `<div style="width:32px;height:32px;border-radius:50%;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;">${name[0].toUpperCase()}</div>`
+        }
+        <span style="font-size:0.875rem;font-weight:600;color:var(--on-surface);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</span>
+        <button id="btn-logout" style="background:transparent;border:1.5px solid var(--outline-variant);color:var(--on-surface-variant);padding:0.35rem 0.875rem;border-radius:999px;font-size:0.8rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all 0.2s;"
+          onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)';"
+          onmouseout="this.style.borderColor='var(--outline-variant)';this.style.color='var(--on-surface-variant)';"
+        >Log out</button>
+      </div>`;
+    document.getElementById('btn-logout').addEventListener('click', logout);
+  }
+
+  /* ── 3. Logout ───────────────────────────────────────────────────────── */
+  async function logout() {
+    await sb.auth.signOut();
+    window.location.href = 'login.html';
+  }
+
+  /* ── Existing page JS ──────────────────────────────────────────────────── */
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', function() {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+  const btn = document.getElementById('hamburger-btn');
+  const menu = document.getElementById('mobile-menu');
+  btn.addEventListener('click', () => menu.classList.toggle('open'));
+</script>
+</body>
+</html>
