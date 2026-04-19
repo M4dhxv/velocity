@@ -29,10 +29,32 @@
     .nav-links a:hover { color: var(--primary); }
     .nav-cta { background: var(--primary); color: white; padding: 0.5rem 1.25rem; border-radius: 999px; font-size: 0.875rem; font-weight: 700; }
     .hamburger { display: none; background: none; border: none; cursor: pointer; flex-direction: column; gap: 4px; padding: 6px; }
-    .hamburger span { display: block; width: 22px; height: 2px; background: var(--on-surface); border-radius: 2px; }
-    #mobile-menu { display: none; position: fixed; top: 64px; left: 0; right: 0; background: var(--surface-lowest); border-bottom: 1px solid var(--outline-variant); padding: 1rem 2rem; flex-direction: column; z-index: 99; }
-    #mobile-menu.open { display: flex; }
-    #mobile-menu a { padding: 0.875rem 0; border-bottom: 1px solid var(--surface-container); font-weight: 600; color: var(--on-surface-variant); }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--on-surface); border-radius: 2px; transition: transform 0.25s ease, opacity 0.2s ease; }
+    .hamburger.active span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+    .hamburger.active span:nth-child(2) { opacity: 0; }
+    .hamburger.active span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+    #mobile-menu {
+      display: flex;
+      position: fixed;
+      top: 64px;
+      left: 0;
+      right: 0;
+      background: var(--surface-lowest);
+      border-bottom: 1px solid var(--outline-variant);
+      padding: 0.25rem 1.25rem 1rem;
+      flex-direction: column;
+      z-index: 99;
+      opacity: 0;
+      transform: translateY(-8px);
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    #mobile-menu.open {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    #mobile-menu a { padding: 0.95rem 0; border-bottom: 1px solid var(--surface-container); font-weight: 700; color: var(--on-surface-variant); font-family: 'Plus Jakarta Sans', sans-serif; }
 
     .pricing-hero { background: var(--surface-lowest); padding: 5rem 2rem 3rem; text-align: center; }
     .eyebrow { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--primary); margin-bottom: 0.75rem; font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -96,7 +118,14 @@
     .footer-links { margin-top: 0.75rem; }
 
     @media (max-width: 900px) { .pricing-grid { grid-template-columns: 1fr; max-width: 480px; } }
-    @media (max-width: 768px) { .nav-links, .nav-cta { display: none; } .hamburger { display: flex; } nav { padding: 0 1.25rem; } }
+    @media (max-width: 768px) {
+      .nav-links, .nav-cta { display: none; }
+      .hamburger { display: flex; }
+      nav { padding: 0 1.25rem; }
+      body.menu-open { overflow: hidden; }
+      .pricing-hero { padding: 4rem 1.25rem 2rem; }
+      .pricing-section, .faq, .referral { padding-left: 1.25rem; padding-right: 1.25rem; }
+    }
   </style>
 </head>
 <body>
@@ -112,7 +141,7 @@
     <a href="about.html">How It Works</a>
   </div>
   <a href="login.html" class="nav-cta">Start Earning →</a>
-  <button class="hamburger" id="hamburger-btn"><span></span><span></span><span></span></button>
+  <button class="hamburger" id="hamburger-btn" aria-label="Menu" aria-expanded="false" aria-controls="mobile-menu"><span></span><span></span><span></span></button>
 </nav>
 <div id="mobile-menu">
   <a href="feed.html">Browse Gigs</a>
@@ -229,7 +258,34 @@
 <script>
   const btn = document.getElementById('hamburger-btn');
   const menu = document.getElementById('mobile-menu');
-  btn.addEventListener('click', () => menu.classList.toggle('open'));
+
+  function setMobileMenu(open) {
+    menu.classList.toggle('open', open);
+    btn.classList.toggle('active', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    document.body.classList.toggle('menu-open', open && window.innerWidth <= 768);
+  }
+
+  btn.addEventListener('click', () => {
+    const next = !menu.classList.contains('open');
+    setMobileMenu(next);
+  });
+
+  menu.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setMobileMenu(false)));
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') setMobileMenu(false);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!menu.classList.contains('open')) return;
+    if (menu.contains(e.target) || btn.contains(e.target)) return;
+    setMobileMenu(false);
+  });
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) setMobileMenu(false);
+  });
 
   let isAnnual = false;
   document.getElementById('annual-btn').addEventListener('click', function() {
