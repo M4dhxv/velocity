@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import {
   buildGreetingText,
+  buildOnboardingTtsTexts,
   extractProfileFromTranscript,
   getConfig,
   synthesizeSpeech,
@@ -52,8 +53,15 @@ async function handleOnboardRespond(req, res) {
 
     // 2) LLM (single call) + 3) validation
     let profile;
+    let llmDebug;
     try {
-      profile = await extractProfileFromTranscript(transcript);
+      const extraction = await extractProfileFromTranscript(transcript, { includeDebug: true });
+      profile = extraction.profile;
+      llmDebug = {
+        model: extraction.model,
+        context: extraction.context,
+        prompt: extraction.prompt,
+      };
     } catch (error) {
       console.error('profile_extraction_failed', error);
       return res.status(502).json({
@@ -72,8 +80,7 @@ async function handleOnboardRespond(req, res) {
     }
 
     // 5) TTS responses (post-save)
-    const ackText = 'Got it. Setting up your profile.';
-    const successText = 'Your profile is ready.';
+    const { ackText, successText } = buildOnboardingTtsTexts();
 
     let ackAudio = '';
     let successAudio = '';
@@ -89,6 +96,8 @@ async function handleOnboardRespond(req, res) {
       ack_audio_base64: ackAudio,
       success_audio_base64: successAudio,
       profile,
+      llm: llmDebug,
+      tts: { ackText, successText },
     });
   } catch (error) {
     console.error(error);
