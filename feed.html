@@ -374,15 +374,33 @@
       }
       .voice-screen { min-height: 100vh; width: 100%; display: flex; align-items: center; justify-content: center; }
       .voice-hidden { display: none !important; }
+      .voice-onboard-shell { width: min(1040px, 100%); min-height: 100vh; padding: 0 1.2rem 1.2rem; position: relative; }
+      .voice-onboard-progress { position: sticky; top: 0; z-index: 8; background: rgba(246,246,255,.92); backdrop-filter: blur(8px); padding-bottom: .75rem; }
+      .voice-onboard-track { height: 8px; background: #d9e2ff; border-radius: 999px; overflow: hidden; }
+      .voice-onboard-fill { height: 100%; width: 38%; background: #3fff8b; box-shadow: 0 0 14px rgba(63,255,139,.5); border-radius: 999px; }
+      .voice-onboard-step { padding: .85rem .2rem .1rem; display: flex; align-items: center; justify-content: space-between; }
+      .voice-step-btn { width: 42px; height: 42px; border-radius: 999px; border: none; background: #eef0ff; color: #5f6a86; display: inline-flex; align-items: center; justify-content: center; }
+      .voice-step-label { font-family: 'Plus Jakarta Sans', sans-serif; font-size: .76rem; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: #006a33; }
+      .voice-onboard-layout { display: grid; grid-template-columns: 1fr; gap: 1rem; min-height: calc(100vh - 86px); align-items: center; }
       .onboarding-wrap {
-        width: min(520px, 100%);
+        width: min(780px, 100%);
+        margin: 0 auto;
         text-align: center;
-        background: transparent;
-        border-radius: 24px;
-        padding: 1.25rem;
+        background: #ffffff;
+        border: 1px solid #e3e8f6;
+        border-radius: 28px;
+        padding: clamp(1rem, 2.4vw, 2rem);
+        box-shadow: 0 22px 50px rgba(39,46,66,.08);
+        position: relative;
+        overflow: hidden;
       }
+      .onboarding-wrap::before { content: ''; position: absolute; width: 520px; height: 520px; background: radial-gradient(circle, rgba(63,255,139,.18) 0%, rgba(63,255,139,0) 66%); top: -190px; left: 50%; transform: translateX(-50%); pointer-events: none; }
+      .onboarding-wrap > * { position: relative; z-index: 1; }
       .voice-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(2.1rem, 8vw, 3.2rem); font-weight: 800; margin-bottom: 0.7rem; letter-spacing: -0.03em; line-height: 1.08; }
       .voice-subtitle { font-size: 1rem; color: #535b71; max-width: 360px; margin: 0 auto 1.5rem; line-height: 1.55; font-weight: 600; }
+      .voice-orb-wrap { width: 192px; height: 192px; margin: 0 auto .9rem; position: relative; display: flex; align-items: center; justify-content: center; }
+      .voice-orb-wrap::before { content: ''; position: absolute; inset: -26px; border-radius: 999px; background: radial-gradient(circle, rgba(63,255,139,.30) 0%, rgba(63,255,139,0) 70%); }
+      .voice-orb-wrap::after { content: ''; position: absolute; inset: -8px; border-radius: 999px; border: 1px solid rgba(63,255,139,.45); }
       .voice-waveform { height: 42px; display: flex; align-items: flex-end; justify-content: center; gap: 5px; margin: 0 auto 1rem; max-width: 220px; }
       .voice-wave-bar { width: clamp(6px, 1.1vw, 9px); height: 16px; border-radius: 999px; background: linear-gradient(180deg, #a2f5c9 0%, #38bf75 100%); transform-origin: center bottom; transition: height 70ms linear, opacity 120ms; opacity: 0.45; }
       .voice-waveform.listening .voice-wave-bar { opacity: 1; }
@@ -445,6 +463,14 @@
       .voice-job-grab { border: none; border-radius: 999px; background: #3fff8b; color: #005d2c; font-weight: 800; font-size: .75rem; padding: .42rem .85rem; }
       .voice-job-save { border: none; border-radius: 999px; background: #e2e7ff; color: #2f466f; font-weight: 800; font-size: .75rem; padding: .42rem .85rem; }
       .voice-type-btn { width: 100%; margin-top: 1rem; border: none; padding: .9rem 1rem; border-radius: 999px; font-weight: 800; font-family: 'Plus Jakarta Sans', sans-serif; background: #d9e2ff; color: #272e42; }
+      @media (min-width: 980px) {
+        .voice-onboard-layout { grid-template-columns: 1.05fr .95fr; gap: 1.4rem; }
+        .voice-onboard-side { text-align: left; padding: 1.2rem .8rem; }
+        .voice-onboard-side h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(2rem, 3vw, 2.6rem); font-weight: 900; line-height: 1.04; letter-spacing: -.03em; color: #272e42; }
+        .voice-onboard-side p { margin-top: .8rem; color: #55617f; font-weight: 600; line-height: 1.6; max-width: 420px; }
+        .voice-onboard-side-badges { margin-top: 1rem; display: flex; gap: .55rem; flex-wrap: wrap; }
+        .voice-onboard-side-badges span { padding: .42rem .7rem; border-radius: 999px; background: #eef4ff; color: #2f466f; font-size: .75rem; font-weight: 800; }
+      }
       .voice-bottom-nav { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,.75); backdrop-filter: blur(12px); border-top-left-radius: 24px; border-top-right-radius: 24px; box-shadow: 0 -12px 34px rgba(39,46,66,.1); padding: .65rem 1.35rem 1.1rem; display: flex; align-items: center; justify-content: space-between; }
       .voice-nav-item { border: none; background: transparent; color: #5d6989; }
       .voice-nav-item.active { background: #3fff8b; color: #005d2c; width: 42px; height: 42px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 0 18px rgba(63,255,139,.4); }
@@ -457,20 +483,45 @@
     shell.className = 'voice-app-shell';
     shell.innerHTML = `
       <section id="voice-onboarding-screen" class="voice-screen">
-        <div class="onboarding-wrap">
-          <h1 class="voice-title">Tell us what you're looking for.</h1>
-          <p class="voice-subtitle">Speak naturally. We're listening.</p>
-          <div id="voice-waveform" class="voice-waveform" aria-hidden="true"></div>
-          <button id="voice-mic-btn" class="voice-mic-btn" type="button" aria-label="Start voice onboarding">
-            <span class="material-symbols-outlined">mic</span>
-          </button>
-          <div id="voice-status" class="voice-status">AI is ready. Tap the mic to start.</div>
-          <div id="voice-live-transcript" class="voice-live-transcript">Your live transcript will appear here while you speak.</div>
-          <div id="voice-loader" class="voice-loader-row" aria-live="polite">
-            <span class="voice-loader-dot"></span><span class="voice-loader-dot"></span><span class="voice-loader-dot"></span>
+        <div class="voice-onboard-shell">
+          <div class="voice-onboard-progress">
+            <div class="voice-onboard-track"><div class="voice-onboard-fill"></div></div>
+            <div class="voice-onboard-step">
+              <button class="voice-step-btn" type="button" aria-label="close"><span class="material-symbols-outlined">close</span></button>
+              <span class="voice-step-label">Step 2 of 4</span>
+              <div style="width:42px;height:42px"></div>
+            </div>
           </div>
-          <div id="voice-check" class="voice-check" aria-hidden="true"><span class="material-symbols-outlined">check</span></div>
-          <button id="voice-type-btn" class="voice-type-btn" type="button">Type instead</button>
+
+          <div class="voice-onboard-layout">
+            <aside class="voice-onboard-side">
+              <h3>Voice onboarding,<br/>built for speed.</h3>
+              <p>Tell GigGrab what you can do. We will build your profile, draft your resume, and line up top-matching gigs instantly.</p>
+              <div class="voice-onboard-side-badges">
+                <span>Live Transcript</span>
+                <span>Auto Profile</span>
+                <span>Top Matches</span>
+              </div>
+            </aside>
+
+            <div class="onboarding-wrap">
+              <h1 class="voice-title">Tell us what you're looking for.</h1>
+              <p class="voice-subtitle">Speak naturally. We're listening.</p>
+              <div class="voice-orb-wrap">
+                <button id="voice-mic-btn" class="voice-mic-btn" type="button" aria-label="Start voice onboarding">
+                  <span class="material-symbols-outlined">mic</span>
+                </button>
+              </div>
+              <div id="voice-waveform" class="voice-waveform" aria-hidden="true"></div>
+              <div id="voice-status" class="voice-status">AI is ready. Tap the mic to start.</div>
+              <div id="voice-live-transcript" class="voice-live-transcript">Your live transcript will appear here while you speak.</div>
+              <div id="voice-loader" class="voice-loader-row" aria-live="polite">
+                <span class="voice-loader-dot"></span><span class="voice-loader-dot"></span><span class="voice-loader-dot"></span>
+              </div>
+              <div id="voice-check" class="voice-check" aria-hidden="true"><span class="material-symbols-outlined">check</span></div>
+              <button id="voice-type-btn" class="voice-type-btn" type="button">Type instead</button>
+            </div>
+          </div>
         </div>
       </section>
       <section id="voice-results-screen" class="voice-screen voice-hidden">
