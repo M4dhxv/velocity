@@ -985,6 +985,7 @@
   async function postOnboard(payload) {
     const endpoints = ['/api/onboard', '/api/onboard/respond'];
     let lastError = 'onboard_request_failed';
+    let lastDetail = '';
     for (const endpoint of endpoints) {
       try {
         const res = await fetch(endpoint, {
@@ -996,13 +997,16 @@
         let data = null;
         try { data = text ? JSON.parse(text) : null; } catch { data = null; }
         if (res.ok) return data || { success: true };
+        lastDetail = data?.detail || '';
         if (res.status === 413) lastError = 'audio_too_large';
         else lastError = data?.message || `http_${res.status}`;
       } catch {
         lastError = 'network_failed';
       }
     }
-    throw new Error(lastError);
+    const err = new Error(lastError);
+    err.detail = lastDetail;
+    throw err;
   }
 
   async function submitOnboarding(audioBase64) {
@@ -1031,6 +1035,7 @@
       }
     } catch (err) {
       const reason = err?.message || 'onboard_request_failed';
+      const detail = err?.detail || '';
       if (reason === 'audio_too_large') {
         setStatus('Audio too long. Keep it under ~10 seconds.', 'processing');
         speakText('Please keep your response shorter. Showing fallback matches now.');
@@ -1040,8 +1045,9 @@
         speakText('Speech recognition is having issues. Showing fallback matches now.');
         profile = buildLocalProfileFromTranscript(state.transcriptLive);
       } else if (reason === 'profile_extraction_failed') {
-        setStatus('Profile extraction issue. Using local profile build.', 'processing');
-        speakText('I could not extract your full profile, but I can still match you now.');
+        setStatus('Profile extraction failed. Check reason below.', 'processing');
+        $('voice-live-transcript').textContent = `Extraction error: ${detail || 'unknown_error'}`;
+        speakText('Profile extraction failed. I will still show your matches.');
         profile = buildLocalProfileFromTranscript(state.transcriptLive);
       } else if (reason === 'profile_save_failed') {
         setStatus('Profile save issue. Showing matches anyway.', 'processing');

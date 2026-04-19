@@ -60,7 +60,11 @@ export default async function handler(req, res) {
       profile = await extractProfileFromTranscript(transcript);
     } catch (error) {
       console.error('profile_extraction_failed', error);
-      return res.status(502).json({ success: false, message: 'profile_extraction_failed' });
+      return res.status(502).json({
+        success: false,
+        message: 'profile_extraction_failed',
+        detail: error?.message || 'unknown_extraction_error',
+      });
     }
 
     // 4) save profile
