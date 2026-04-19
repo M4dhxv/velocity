@@ -1051,6 +1051,9 @@
         profile = buildLocalProfileFromTranscript(state.transcriptLive);
       } else if (reason === 'profile_save_failed') {
         setStatus('Profile save issue. Showing matches anyway.', 'processing');
+        if (detail) {
+          $('voice-live-transcript').textContent = `Save error: ${detail}`;
+        }
         speakText('There was a save issue, but I can still show your matches.');
         profile = buildLocalProfileFromTranscript(state.transcriptLive);
       } else if (reason === 'transcription_failed') {

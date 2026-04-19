@@ -80,7 +80,11 @@ export default async function handler(req, res) {
       await upsertUserProfile(userId, profile, transcript);
     } catch (error) {
       console.error('profile_save_failed', error);
-      return res.status(500).json({ success: false, message: 'profile_save_failed' });
+      return res.status(500).json({
+        success: false,
+        message: 'profile_save_failed',
+        detail: error?.message || 'unknown_save_error',
+      });
     }
 
     // 5) TTS responses
