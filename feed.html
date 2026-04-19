@@ -322,18 +322,18 @@
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const fallbackJobs = [
-    { title: 'Earn $50 fixing frontend bugs', type: 'Remote', pay: '$50', location: 'Anywhere' },
-    { title: 'Deliver packages locally — $30', type: 'Local', pay: '$30', location: 'Nearby' },
-    { title: 'Write social captions for a brand', type: 'Remote', pay: '$40', location: 'Anywhere' },
-    { title: 'Event setup shift (3 hours)', type: 'Local', pay: '$70', location: 'City Center' },
-    { title: 'Quick app testing task', type: 'Quick', pay: '$15', location: 'Anywhere' },
-    { title: 'Product photo mini-shoot', type: 'Local', pay: '$55', location: 'Downtown' },
-    { title: 'Translate short product docs', type: 'Remote', pay: '$28', location: 'Anywhere' },
-    { title: 'Data entry for 200 rows', type: 'Remote', pay: '$22', location: 'Anywhere' },
-    { title: 'Phone support callback task', type: 'Part-time', pay: '$20', location: 'Anywhere' },
-    { title: 'Proofread landing page copy', type: 'Remote', pay: '$18', location: 'Anywhere' },
-    { title: 'Record short UGC clips', type: 'Quick', pay: '$35', location: 'Anywhere' },
-    { title: 'Pickup and local courier run', type: 'Local', pay: '$27', location: 'Near You' }
+    { title: 'Earn $50 fixing frontend bugs', type: 'Remote', pay: '$50', location: 'Anywhere', keywords: ['frontend', 'react', 'javascript', 'css'] },
+    { title: 'Deliver packages locally — $30', type: 'Local', pay: '$30', location: 'Nearby', keywords: ['delivery', 'driving', 'local'] },
+    { title: 'Write social captions for a brand', type: 'Remote', pay: '$40', location: 'Anywhere', keywords: ['writing', 'content', 'social media'] },
+    { title: 'Event setup shift (3 hours)', type: 'Local', pay: '$70', location: 'City Center', keywords: ['event', 'setup', 'local'] },
+    { title: 'Quick app testing task', type: 'Quick', pay: '$15', location: 'Anywhere', keywords: ['testing', 'qa', 'app'] },
+    { title: 'Product photo mini-shoot', type: 'Local', pay: '$55', location: 'Downtown', keywords: ['photography', 'video', 'editing'] },
+    { title: 'Translate short product docs', type: 'Remote', pay: '$28', location: 'Anywhere', keywords: ['translation', 'writing'] },
+    { title: 'Data entry for 200 rows', type: 'Remote', pay: '$22', location: 'Anywhere', keywords: ['data entry', 'typing', 'excel'] },
+    { title: 'Phone support callback task', type: 'Part-time', pay: '$20', location: 'Anywhere', keywords: ['support', 'customer service', 'calling'] },
+    { title: 'Proofread landing page copy', type: 'Remote', pay: '$18', location: 'Anywhere', keywords: ['proofreading', 'writing', 'editing'] },
+    { title: 'Record short UGC clips', type: 'Quick', pay: '$35', location: 'Anywhere', keywords: ['video', 'content', 'social'] },
+    { title: 'Pickup and local courier run', type: 'Local', pay: '$27', location: 'Near You', keywords: ['delivery', 'courier', 'driving'] }
   ];
 
   const state = {
@@ -718,15 +718,25 @@
 
   function buildMatches(profile) {
     const jobs = [...fallbackJobs];
-    const skills = Array.isArray(profile?.skills) ? profile.skills.map((s) => String(s).toLowerCase()) : [];
+    const skills = Array.isArray(profile?.skills) && profile.skills.length
+      ? profile.skills.map((s) => String(s).toLowerCase())
+      : extractKeywordTags(state.transcriptLive).map((s) => String(s).toLowerCase());
     const interests = Array.isArray(profile?.interests) ? profile.interests.map((s) => String(s).toLowerCase()) : [];
     const workType = String(profile?.work_type || '').toLowerCase();
 
+    const keywordHit = (needle, haystack) => {
+      if (!needle) return false;
+      const n = needle.toLowerCase();
+      if (haystack.includes(n)) return true;
+      const compact = n.replace(/[^a-z0-9]+/g, ' ').trim();
+      return compact.length > 2 && haystack.includes(compact);
+    };
+
     const scored = jobs.map((job) => {
-      const haystack = `${job.title} ${job.type} ${job.location}`.toLowerCase();
+      const haystack = `${job.title} ${job.type} ${job.location} ${(job.keywords || []).join(' ')}`.toLowerCase();
       let score = 0;
-      skills.forEach((s) => { if (s && haystack.includes(s)) score += 2; });
-      interests.forEach((i) => { if (i && haystack.includes(i)) score += 1; });
+      skills.forEach((s) => { if (keywordHit(s, haystack)) score += 3; });
+      interests.forEach((i) => { if (keywordHit(i, haystack)) score += 2; });
       if (workType && workType !== 'any' && haystack.includes(workType)) score += 2;
       if (job.type.toLowerCase() === 'remote' && workType === 'remote') score += 1;
       if (job.type.toLowerCase() === 'local' && workType === 'local') score += 1;
@@ -743,8 +753,10 @@
 
   function renderJobs(profile) {
     const matches = buildMatches(profile);
+    const maxScore = Math.max(1, ...matches.map((m) => Number(m._score || 0)));
     $('voice-jobs-list').innerHTML = matches.map((job, index) => {
-      const score = Math.max(78, 96 - (index * 3));
+      const rawScore = Number(job._score || 0);
+      const score = Math.max(62, Math.min(97, Math.round((rawScore / maxScore) * 34) + 63));
       return `
       <article class="voice-job-card">
         <div>
@@ -768,7 +780,11 @@
 
   function renderProfile(profile) {
     const pills = [];
-    const skills = Array.isArray(profile?.skills) ? profile.skills.slice(0, 4) : [];
+    const skills = Array.isArray(profile?.skills) && profile.skills.length
+      ? profile.skills.slice(0, 4)
+      : extractKeywordTags(state.transcriptLive)
+          .filter((t) => !/work|matches|profile/i.test(t))
+          .slice(0, 4);
     if (skills.length) pills.push(...skills.map((s) => `Skill: ${s}`));
     if (profile?.level) pills.push(`Level: ${profile.level}`);
     if (profile?.work_type) pills.push(`Work type: ${profile.work_type}`);
@@ -778,7 +794,11 @@
 
   function buildResumeText(profile) {
     const userName = state.session?.user?.user_metadata?.full_name || state.session?.user?.email?.split('@')?.[0] || 'Gig Worker';
-    const skills = Array.isArray(profile?.skills) && profile.skills.length ? profile.skills.slice(0, 5) : [];
+    const skills = Array.isArray(profile?.skills) && profile.skills.length
+      ? profile.skills.slice(0, 5)
+      : extractKeywordTags(state.transcriptLive)
+          .filter((t) => !/work|matches|profile/i.test(t))
+          .slice(0, 5);
     const interests = Array.isArray(profile?.interests) && profile.interests.length ? profile.interests.slice(0, 3) : [];
     const level = profile?.level || 'intermediate';
     const workType = profile?.work_type || 'any';
