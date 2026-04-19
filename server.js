@@ -69,6 +69,18 @@ app.post('/api/onboard/respond', async (req, res) => {
   }
 });
 
+app.get('/api/onboard/respond', (_req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: 'onboard_respond_ready',
+    expected_method: 'POST',
+    required_body: {
+      user_id: 'string',
+      audio_base64: 'string',
+    },
+  });
+});
+
 app.listen(port, () => {
   console.log(`Voice onboarding backend listening on port ${port}`);
 });
