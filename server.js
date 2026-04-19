@@ -137,6 +137,35 @@ app.get('/api/onboard', (_req, res) => {
   });
 });
 
+app.get('/api/onboard/debug-save', async (_req, res) => {
+  try {
+    const debugUserId = `debug-save-${Date.now()}`;
+    await upsertUserProfile(
+      debugUserId,
+      {
+        skills: ['debug'],
+        experience: '',
+        interests: ['health-check'],
+        work_type: 'any',
+        level: 'intermediate',
+      },
+      'debug save health check'
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'save_ok',
+      user_id: debugUserId,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'save_failed',
+      detail: error?.message || 'unknown_error',
+    });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Voice onboarding backend listening on port ${port}`);
 });
