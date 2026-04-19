@@ -50,3 +50,20 @@ INSERT INTO jobs (title, skills, type, pay, location) VALUES
   ('Custom logo sketch — small café',             ARRAY['design','logo','illustration','branding'],           'quick',  80,  NULL),
   ('Fill out 3 online forms',                      ARRAY['data-entry','typing','admin'],                      'quick',  10,  NULL),
   ('Phone call — confirm 10 appointments',         ARRAY['calling','phone','admin','customer-service'],       'quick',  20,  NULL);
+
+-- 4. Voice onboarding profiles table
+CREATE TABLE IF NOT EXISTS user_profiles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT NOT NULL UNIQUE,
+  skills JSONB NOT NULL DEFAULT '[]'::jsonb,
+  experience TEXT NOT NULL DEFAULT '',
+  interests JSONB NOT NULL DEFAULT '[]'::jsonb,
+  work_type TEXT NOT NULL DEFAULT 'any',
+  level TEXT NOT NULL DEFAULT 'intermediate',
+  raw_transcript TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT user_profiles_work_type_check CHECK (work_type IN ('remote','local','part-time','full-time','any')),
+  CONSTRAINT user_profiles_level_check CHECK (level IN ('beginner','intermediate','advanced'))
+);
+
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
