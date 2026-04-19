@@ -577,7 +577,7 @@
     const raw = (text || '').toLowerCase();
     const dictionary = [
       ['react', 'React'], ['mern', 'MERN Stack'], ['node', 'Node.js'], ['python', 'Python'],
-      ['frontend', 'Frontend'], ['backend', 'Backend'], ['sales', 'Sales'], ['video', 'Video Editing'],
+      ['frontend', 'Frontend'], ['front-end', 'Frontend'], ['backend', 'Backend'], ['back-end', 'Backend'], ['sales', 'Sales'], ['video', 'Video Editing'],
       ['editing', 'Editing'], ['design', 'Design'], ['figma', 'Figma'], ['content', 'Content'],
       ['writing', 'Writing'], ['delivery', 'Delivery'], ['remote', 'Remote Work'], ['local', 'Local Work']
     ];
@@ -588,9 +588,10 @@
     });
 
     if (!tags.length && raw.trim()) {
+      const skip = new Set(['ok', 'okay', 'looking', 'for', 'want', 'work', 'job', 'gigs', 'please', 'just', 'the', 'a', 'an', 'i', 'am']);
       raw
         .split(/[^a-zA-Z0-9+.#-]+/)
-        .filter((w) => w.length > 2)
+        .filter((w) => w.length > 2 && !skip.has(w))
         .slice(0, 4)
         .forEach((w) => tags.push(w.charAt(0).toUpperCase() + w.slice(1)));
     }
