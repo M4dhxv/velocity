@@ -417,6 +417,13 @@
       .voice-logout-btn:hover { border-color: #aeb9d4; color: #1f2738; }
       .voice-profile-pills { display: flex; flex-wrap: wrap; gap: .45rem; margin-bottom: 1rem; }
       .voice-pill { font-size: .76rem; font-weight: 700; color: #34507c; background: #eef4ff; padding: .3rem .58rem; border-radius: 999px; border: 1px solid #d4e0fb; }
+      .voice-resume-card { margin-bottom: 1rem; border: 1px solid #dbe3f8; background: #fff; border-radius: 16px; padding: .95rem; box-shadow: 0 8px 20px rgba(39,46,66,.06); }
+      .voice-resume-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: .9rem; font-weight: 800; color: #1f2b45; margin-bottom: .4rem; display: flex; align-items: center; gap: .35rem; }
+      .voice-resume-text { font-size: .8rem; color: #4a5a7c; line-height: 1.5; white-space: pre-wrap; }
+      .voice-resume-actions { margin-top: .7rem; display: flex; gap: .5rem; }
+      .voice-resume-btn { border: none; border-radius: 999px; padding: .4rem .75rem; font-size: .74rem; font-weight: 800; cursor: pointer; }
+      .voice-resume-btn.primary { background: #3fff8b; color: #005d2c; }
+      .voice-resume-btn.secondary { background: #eef4ff; color: #29416b; }
       .voice-jobs-list { display: grid; gap: .7rem; }
       .voice-job-card { border: 1px solid #e3e8f6; border-radius: 18px; padding: 1rem; display: flex; align-items: center; justify-content: space-between; gap: .7rem; background: #fff; box-shadow: 0 10px 24px rgba(39,46,66,.08); }
       .voice-job-side { display: flex; flex-direction: column; align-items: flex-end; gap: .35rem; }
@@ -458,6 +465,7 @@
             <button id="voice-logout-btn" class="voice-logout-btn" type="button">Log out</button>
           </div>
           <div id="voice-profile-pills" class="voice-profile-pills"></div>
+          <div id="voice-resume-card" class="voice-resume-card"></div>
           <div id="voice-jobs-list" class="voice-jobs-list"></div>
         </div>
       </section>
@@ -594,6 +602,59 @@
     $('voice-profile-pills').innerHTML = pills.map((p) => `<span class="voice-pill">${p}</span>`).join('');
   }
 
+  function buildResumeText(profile) {
+    const userName = state.session?.user?.user_metadata?.full_name || state.session?.user?.email?.split('@')?.[0] || 'Gig Worker';
+    const skills = Array.isArray(profile?.skills) && profile.skills.length ? profile.skills.slice(0, 5) : ['Communication', 'Reliability'];
+    const interests = Array.isArray(profile?.interests) && profile.interests.length ? profile.interests.slice(0, 3) : ['Flexible gigs'];
+    const level = profile?.level || 'intermediate';
+    const workType = profile?.work_type || 'any';
+    return [
+      `${userName}`,
+      `Level: ${level} | Work preference: ${workType}`,
+      `Top skills: ${skills.join(', ')}`,
+      `Interests: ${interests.join(', ')}`,
+      'Summary: Dependable gig worker focused on fast delivery, quality output, and clear communication.'
+    ].join('\n');
+  }
+
+  function renderResume(profile) {
+    const resumeText = buildResumeText(profile);
+    $('voice-resume-card').innerHTML = `
+      <h3 class="voice-resume-title"><span class="material-symbols-outlined" style="font-size:16px">description</span>Resume draft built</h3>
+      <p class="voice-resume-text">${resumeText}</p>
+      <div class="voice-resume-actions">
+        <button id="voice-resume-download" class="voice-resume-btn primary" type="button">Download .txt</button>
+        <button id="voice-resume-copy" class="voice-resume-btn secondary" type="button">Copy</button>
+      </div>
+    `;
+
+    const downloadBtn = $('voice-resume-download');
+    const copyBtn = $('voice-resume-copy');
+
+    if (downloadBtn) {
+      downloadBtn.onclick = () => {
+        const blob = new Blob([resumeText], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'giggrab-resume-draft.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+    }
+
+    if (copyBtn) {
+      copyBtn.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(resumeText);
+          copyBtn.textContent = 'Copied';
+        } catch {
+          copyBtn.textContent = 'Copy failed';
+        }
+      };
+    }
+  }
+
   function toBase64(arrayBuffer) {
     let binary = '';
     const bytes = new Uint8Array(arrayBuffer);
@@ -717,7 +778,8 @@
     }
     let mimeType = '';
     if (window.MediaRecorder && MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) mimeType = 'audio/webm;codecs=opus';
-    state.mediaRecorder = mimeType ? new MediaRecorder(state.stream, { mimeType }) : new MediaRecorder(state.stream);
+    const recorderOptions = mimeType ? { mimeType, audioBitsPerSecond: 32000 } : { audioBitsPerSecond: 32000 };
+    state.mediaRecorder = new MediaRecorder(state.stream, recorderOptions);
     state.mediaRecorder.ondataavailable = (event) => {
       if (event.data && event.data.size > 0) state.audioChunks.push(event.data);
     };
@@ -734,7 +796,7 @@
     };
     state.mediaRecorder.start(250);
     startWaveLoop();
-    state.maxDurationTimer = setTimeout(() => stopRecording('max_duration'), 20000);
+    state.maxDurationTimer = setTimeout(() => stopRecording('max_duration'), 12000);
   }
 
   function stopRecording(reason = 'manual') {
@@ -748,6 +810,7 @@
 
   async function postOnboard(payload) {
     const endpoints = ['/api/onboard', '/api/onboard/respond'];
+    let lastError = 'onboard_request_failed';
     for (const endpoint of endpoints) {
       try {
         const res = await fetch(endpoint, {
@@ -755,12 +818,17 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        if (res.ok) return await res.json();
+        const text = await res.text();
+        let data = null;
+        try { data = text ? JSON.parse(text) : null; } catch { data = null; }
+        if (res.ok) return data || { success: true };
+        if (res.status === 413) lastError = 'audio_too_large';
+        else lastError = data?.message || `http_${res.status}`;
       } catch {
-        // try next endpoint
+        lastError = 'network_failed';
       }
     }
-    throw new Error('onboard_request_failed');
+    throw new Error(lastError);
   }
 
   async function submitOnboarding(audioBase64) {
@@ -783,15 +851,25 @@
         setStatus('Could not hear clearly. Using fallback matches.', 'processing');
         speakText('I could not hear clearly, but I found some matches for you.');
       }
-    } catch {
-      setStatus('Network issue. Showing fallback matches.', 'processing');
-      speakText('Network issue. Showing fallback matches now.');
+    } catch (err) {
+      const reason = err?.message || 'onboard_request_failed';
+      if (reason === 'audio_too_large') {
+        setStatus('Audio too long. Keep it under ~10 seconds.', 'processing');
+        speakText('Please keep your response shorter. Showing fallback matches now.');
+      } else if (reason === 'transcription_failed') {
+        setStatus('Could not transcribe clearly. Showing fallback matches.', 'processing');
+        speakText('I could not transcribe clearly. Showing fallback matches now.');
+      } else {
+        setStatus('Matching service issue. Showing fallback matches.', 'processing');
+        speakText('There was a matching service issue. Showing fallback matches now.');
+      }
     }
     showLoader(false);
     showCheck(true);
     setStatus('Profile ready', 'success');
     state.profile = profile;
     renderProfile(profile);
+    renderResume(profile);
     renderJobs(profile);
     setTimeout(() => {
       state.isOnboardingComplete = true;
