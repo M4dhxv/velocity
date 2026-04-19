@@ -337,7 +337,6 @@
   ];
 
   const state = {
-    isOnboardingComplete: false,
     isRecording: false,
     isProcessing: false,
     session: null,
@@ -354,7 +353,9 @@
     transcriptFinal: '',
     transcriptLive: '',
     aiAudioPlaying: false,
+    processingTagTimer: null,
   };
+  let onboardingComplete = false;
 
   function hideLegacyFeedUI() {
     ['nav', '#mobile-menu', '.search-hero', '.results-area'].forEach((selector) => {
@@ -428,20 +429,14 @@
       .voice-check.visible { display: inline-flex; }
       .voice-check .material-symbols-outlined { font-size: 34px; }
       @keyframes voice-pop { to { transform: scale(1); } }
-      .voice-results-wrap { width: min(460px,100%); background: #f6f6ff; border-radius: 22px; padding: 0; min-height: 100vh; position: relative; overflow: hidden; }
-      .voice-feed-topbar { position: sticky; top: 0; z-index: 6; background: #eef0ff; display: flex; align-items: center; justify-content: space-between; padding: .95rem 1rem; }
-      .voice-feed-logo { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.35rem; font-weight: 900; font-style: italic; letter-spacing: -.03em; color: #006a33; text-transform: uppercase; }
-      .voice-avatar-btn, .voice-settings-btn { width: 40px; height: 40px; border-radius: 999px; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
-      .voice-avatar-btn { background: #d9e2ff; color: #1f2b45; font-weight: 800; }
-      .voice-settings-btn { background: transparent; color: #5f6a86; }
-      .voice-feed-main { padding: 1rem 1rem 6.2rem; }
-      .voice-hero-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(2rem, 8vw, 2.35rem); font-weight: 800; line-height: 1.08; letter-spacing: -.03em; color: #272e42; margin-bottom: .6rem; }
-      .voice-hero-highlight { color: #006a33; position: relative; display: inline-block; }
-      .voice-hero-highlight::after { content: ''; position: absolute; left: 0; right: 0; bottom: -5px; height: 8px; border-radius: 999px; background: #3fff8b; opacity: .55; }
-      .voice-transition { font-size: .8rem; font-weight: 700; color: #627093; margin-bottom: .9rem; }
-      .voice-profile-pills { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .35rem; margin-bottom: .95rem; }
-      .voice-profile-pills::-webkit-scrollbar { display: none; }
-      .voice-pill { white-space: nowrap; font-size: .76rem; font-weight: 800; color: #2f466f; background: #d9e2ff; padding: .52rem .8rem; border-radius: 10px; border: none; font-family: 'Plus Jakarta Sans', sans-serif; }
+      .voice-results-wrap { width: min(1280px, 100%); margin: 0 auto; background: #f6f6ff; min-height: 100vh; padding: 2rem 1.2rem 2.6rem; }
+      .voice-results-top { display: flex; align-items: center; justify-content: space-between; gap: .9rem; margin-bottom: .6rem; }
+      .voice-results-top h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(1.8rem, 3.1vw, 2.5rem); font-weight: 800; letter-spacing: -.02em; color: #272e42; }
+      .voice-logout-btn { border: 1px solid #d8deef; background: #fff; color: #5f6a86; border-radius: 999px; padding: .45rem .9rem; cursor: pointer; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; transition: all .2s; }
+      .voice-logout-btn:hover { border-color: #aeb9d4; color: #1f2738; }
+      .voice-transition { font-size: .85rem; font-weight: 700; color: #627093; margin-bottom: .95rem; }
+      .voice-profile-pills { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
+      .voice-pill { font-size: .76rem; font-weight: 800; color: #2f466f; background: #d9e2ff; padding: .52rem .8rem; border-radius: 999px; border: none; font-family: 'Plus Jakarta Sans', sans-serif; }
       .voice-pill.active { background: #3fff8b; color: #005d2c; box-shadow: 0 6px 18px rgba(63,255,139,.26); }
       .voice-resume-card { margin-bottom: 1rem; border: 1px solid #dbe3f8; background: #fff; border-radius: 16px; padding: .95rem; box-shadow: 0 8px 20px rgba(39,46,66,.06); }
       .voice-resume-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: .9rem; font-weight: 800; color: #1f2b45; margin-bottom: .4rem; display: flex; align-items: center; gap: .35rem; }
@@ -450,7 +445,7 @@
       .voice-resume-btn { border: none; border-radius: 999px; padding: .4rem .75rem; font-size: .74rem; font-weight: 800; cursor: pointer; }
       .voice-resume-btn.primary { background: #3fff8b; color: #005d2c; }
       .voice-resume-btn.secondary { background: #eef4ff; color: #29416b; }
-      .voice-jobs-list { display: grid; gap: .85rem; }
+      .voice-jobs-list { display: grid; gap: 1rem; grid-template-columns: 1fr; }
       .voice-job-card { border: 1px solid #e3e8f6; border-radius: 22px; padding: 1rem; display: flex; align-items: flex-start; justify-content: space-between; gap: .7rem; background: #fff; box-shadow: 0 12px 28px rgba(39,46,66,.09); }
       .voice-job-side { display: flex; flex-direction: column; align-items: flex-end; gap: .35rem; }
       .voice-job-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1rem; font-weight: 800; color: #1e2a43; line-height: 1.25; }
@@ -463,6 +458,18 @@
       .voice-job-grab { border: none; border-radius: 999px; background: #3fff8b; color: #005d2c; font-weight: 800; font-size: .75rem; padding: .42rem .85rem; }
       .voice-job-save { border: none; border-radius: 999px; background: #e2e7ff; color: #2f466f; font-weight: 800; font-size: .75rem; padding: .42rem .85rem; }
       .voice-type-btn { width: 100%; margin-top: 1rem; border: none; padding: .9rem 1rem; border-radius: 999px; font-weight: 800; font-family: 'Plus Jakarta Sans', sans-serif; background: #d9e2ff; color: #272e42; }
+      .voice-processing { margin: .95rem auto 0; max-width: 520px; background: #fff; border: 1px solid #dbe3f8; border-radius: 14px; padding: .75rem .85rem; display: none; text-align: left; }
+      .voice-processing.visible { display: block; }
+      .voice-processing-title { font-size: .82rem; font-weight: 800; color: #2f466f; margin-bottom: .45rem; }
+      .voice-processing-tags { display: flex; flex-wrap: wrap; gap: .42rem; }
+      .voice-proc-tag { font-size: .73rem; font-weight: 800; background: #eef4ff; color: #2f466f; border-radius: 999px; padding: .28rem .62rem; opacity: 0; transform: translateY(6px); animation: tag-in .24s ease forwards; }
+      @keyframes tag-in { to { opacity: 1; transform: translateY(0); } }
+      @media (min-width: 900px) {
+        .voice-jobs-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+      @media (min-width: 1220px) {
+        .voice-jobs-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      }
       @media (min-width: 980px) {
         .voice-onboard-layout { grid-template-columns: 1.05fr .95fr; gap: 1.4rem; }
         .voice-onboard-side { text-align: left; padding: 1.2rem .8rem; }
@@ -518,6 +525,10 @@
               <div id="voice-loader" class="voice-loader-row" aria-live="polite">
                 <span class="voice-loader-dot"></span><span class="voice-loader-dot"></span><span class="voice-loader-dot"></span>
               </div>
+              <div id="voice-processing" class="voice-processing" aria-live="polite">
+                <p class="voice-processing-title">Building from your response…</p>
+                <div id="voice-processing-tags" class="voice-processing-tags"></div>
+              </div>
               <div id="voice-check" class="voice-check" aria-hidden="true"><span class="material-symbols-outlined">check</span></div>
               <button id="voice-type-btn" class="voice-type-btn" type="button">Type instead</button>
             </div>
@@ -526,24 +537,14 @@
       </section>
       <section id="voice-results-screen" class="voice-screen voice-hidden">
         <div class="voice-results-wrap">
-          <header class="voice-feed-topbar">
-            <button id="voice-logout-btn" class="voice-avatar-btn" type="button" title="Log out">M</button>
-            <h2 class="voice-feed-logo">Velocity</h2>
-            <button class="voice-settings-btn" type="button" title="Settings"><span class="material-symbols-outlined">settings</span></button>
-          </header>
-          <main class="voice-feed-main">
-            <h3 class="voice-hero-title">Top matches for<br><span class="voice-hero-highlight">you</span></h3>
-            <p class="voice-transition">Using your profile preferences</p>
-            <div id="voice-profile-pills" class="voice-profile-pills"></div>
-            <div id="voice-resume-card" class="voice-resume-card"></div>
-            <div id="voice-jobs-list" class="voice-jobs-list"></div>
-          </main>
-          <nav class="voice-bottom-nav" aria-label="bottom navigation">
-            <button class="voice-nav-item active" type="button"><span class="material-symbols-outlined">bolt</span></button>
-            <button class="voice-nav-item" type="button"><span class="material-symbols-outlined">explore</span></button>
-            <button class="voice-nav-item" type="button"><span class="material-symbols-outlined">account_balance_wallet</span></button>
-            <button class="voice-nav-item" type="button"><span class="material-symbols-outlined">person</span></button>
-          </nav>
+          <div class="voice-results-top">
+            <h2>Top matches for you</h2>
+            <button id="voice-logout-btn" class="voice-logout-btn" type="button">Log out</button>
+          </div>
+          <p class="voice-transition">Using your profile preferences</p>
+          <div id="voice-profile-pills" class="voice-profile-pills"></div>
+          <div id="voice-resume-card" class="voice-resume-card"></div>
+          <div id="voice-jobs-list" class="voice-jobs-list"></div>
         </div>
       </section>
     `;
@@ -566,6 +567,58 @@
 
   function showCheck(show) {
     $('voice-check').classList.toggle('visible', !!show);
+  }
+
+  function showProcessing(show) {
+    $('voice-processing').classList.toggle('visible', !!show);
+  }
+
+  function extractKeywordTags(text = '') {
+    const raw = (text || '').toLowerCase();
+    const dictionary = [
+      ['react', 'React'], ['mern', 'MERN Stack'], ['node', 'Node.js'], ['python', 'Python'],
+      ['frontend', 'Frontend'], ['backend', 'Backend'], ['sales', 'Sales'], ['video', 'Video Editing'],
+      ['editing', 'Editing'], ['design', 'Design'], ['figma', 'Figma'], ['content', 'Content'],
+      ['writing', 'Writing'], ['delivery', 'Delivery'], ['remote', 'Remote Work'], ['local', 'Local Work']
+    ];
+
+    const tags = [];
+    dictionary.forEach(([needle, label]) => {
+      if (raw.includes(needle) && !tags.includes(label)) tags.push(label);
+    });
+
+    if (!tags.length && raw.trim()) {
+      raw
+        .split(/[^a-zA-Z0-9+.#-]+/)
+        .filter((w) => w.length > 2)
+        .slice(0, 4)
+        .forEach((w) => tags.push(w.charAt(0).toUpperCase() + w.slice(1)));
+    }
+
+    if (!tags.length) tags.push('Top Matches', 'Profile Build', 'Flexible Work');
+    return tags.slice(0, 6);
+  }
+
+  function animateProcessingTags(tags = []) {
+    const container = $('voice-processing-tags');
+    container.innerHTML = '';
+    if (state.processingTagTimer) {
+      clearInterval(state.processingTagTimer);
+      state.processingTagTimer = null;
+    }
+    let idx = 0;
+    state.processingTagTimer = setInterval(() => {
+      if (idx >= tags.length) {
+        clearInterval(state.processingTagTimer);
+        state.processingTagTimer = null;
+        return;
+      }
+      const chip = document.createElement('span');
+      chip.className = 'voice-proc-tag';
+      chip.textContent = tags[idx];
+      container.appendChild(chip);
+      idx += 1;
+    }, 300);
   }
 
   function createWaveBars(count = 28) {
@@ -646,12 +699,34 @@
     setStatus('Tap the mic and start speaking.');
   }
 
-  function renderJobs(profile) {
+  function buildMatches(profile) {
     const jobs = [...fallbackJobs];
-    const workType = (profile?.work_type || '').toLowerCase();
-    if (workType === 'remote') jobs.sort((a, b) => (a.type === 'Remote' ? -1 : 1) - (b.type === 'Remote' ? -1 : 1));
-    if (workType === 'local') jobs.sort((a, b) => (a.type === 'Local' ? -1 : 1) - (b.type === 'Local' ? -1 : 1));
-    $('voice-jobs-list').innerHTML = jobs.map((job, index) => {
+    const skills = Array.isArray(profile?.skills) ? profile.skills.map((s) => String(s).toLowerCase()) : [];
+    const interests = Array.isArray(profile?.interests) ? profile.interests.map((s) => String(s).toLowerCase()) : [];
+    const workType = String(profile?.work_type || '').toLowerCase();
+
+    const scored = jobs.map((job) => {
+      const haystack = `${job.title} ${job.type} ${job.location}`.toLowerCase();
+      let score = 0;
+      skills.forEach((s) => { if (s && haystack.includes(s)) score += 2; });
+      interests.forEach((i) => { if (i && haystack.includes(i)) score += 1; });
+      if (workType && workType !== 'any' && haystack.includes(workType)) score += 2;
+      if (job.type.toLowerCase() === 'remote' && workType === 'remote') score += 1;
+      if (job.type.toLowerCase() === 'local' && workType === 'local') score += 1;
+      return { ...job, _score: score };
+    });
+
+    scored.sort((a, b) => b._score - a._score);
+    let matches = scored;
+    if (!matches.length) {
+      matches = [...fallbackJobs];
+    }
+    return matches;
+  }
+
+  function renderJobs(profile) {
+    const matches = buildMatches(profile);
+    $('voice-jobs-list').innerHTML = matches.map((job, index) => {
       const score = Math.max(78, 96 - (index * 3));
       return `
       <article class="voice-job-card">
@@ -661,7 +736,7 @@
           <p class="voice-job-meta">${job.location}</p>
           <p class="voice-match">Matched to your profile</p>
           <div class="voice-job-actions">
-            <button class="voice-job-grab" type="button">Grab</button>
+            <button class="voice-job-grab" type="button">Apply</button>
             <button class="voice-job-save" type="button">Save</button>
           </div>
         </div>
@@ -686,15 +761,15 @@
 
   function buildResumeText(profile) {
     const userName = state.session?.user?.user_metadata?.full_name || state.session?.user?.email?.split('@')?.[0] || 'Gig Worker';
-    const skills = Array.isArray(profile?.skills) && profile.skills.length ? profile.skills.slice(0, 5) : ['Communication', 'Reliability'];
-    const interests = Array.isArray(profile?.interests) && profile.interests.length ? profile.interests.slice(0, 3) : ['Flexible gigs'];
+    const skills = Array.isArray(profile?.skills) && profile.skills.length ? profile.skills.slice(0, 5) : [];
+    const interests = Array.isArray(profile?.interests) && profile.interests.length ? profile.interests.slice(0, 3) : [];
     const level = profile?.level || 'intermediate';
     const workType = profile?.work_type || 'any';
     return [
       `${userName}`,
       `Level: ${level} | Work preference: ${workType}`,
-      `Top skills: ${skills.join(', ')}`,
-      `Interests: ${interests.join(', ')}`,
+      `Top skills: ${skills.join(', ') || 'Not specified'}`,
+      `Interests: ${interests.join(', ') || 'Not specified'}`,
       'Summary: Dependable gig worker focused on fast delivery, quality output, and clear communication.'
     ].join('\n');
   }
@@ -917,7 +992,10 @@
     state.isProcessing = true;
     showLoader(true);
     showCheck(false);
-    setStatus('Got it. Setting up your profile…', 'processing');
+    setStatus('Got it. Building your profile...', 'processing');
+    speakText('Got it. Building your profile now.');
+    showProcessing(true);
+    animateProcessingTags(extractKeywordTags(state.transcriptLive));
     const payload = { user_id: state.session.user.id, audio_base64: audioBase64 };
     let profile = { skills: [], experience: '', interests: [], work_type: 'any', level: 'intermediate' };
     try {
@@ -926,7 +1004,7 @@
         profile = data.profile || profile;
         $('voice-live-transcript').textContent = state.transcriptLive || 'Voice captured.';
         const playedAck = data.ack_audio_base64 ? await playAudioBase64(data.ack_audio_base64) : false;
-        if (!playedAck) speakText('Got it. I am setting up your profile now.');
+        if (!playedAck) speakText('Got it. Building your profile now.');
         const playedSuccess = data.success_audio_base64 ? await playAudioBase64(data.success_audio_base64) : false;
         if (!playedSuccess) speakText('Profile ready. I found top matches for you.');
       } else if (data?.message === 'transcription_failed') {
@@ -946,17 +1024,32 @@
         speakText('There was a matching service issue. Showing fallback matches now.');
       }
     }
+    if (state.processingTagTimer) {
+      clearInterval(state.processingTagTimer);
+      state.processingTagTimer = null;
+    }
     showLoader(false);
+    showProcessing(false);
     showCheck(true);
-    setStatus('Profile ready', 'success');
+    setStatus('✔ Profile ready', 'success');
     state.profile = profile;
     renderProfile(profile);
     renderResume(profile);
     renderJobs(profile);
     setTimeout(() => {
-      state.isOnboardingComplete = true;
-      $('voice-onboarding-screen').classList.add('voice-hidden');
-      $('voice-results-screen').classList.remove('voice-hidden');
+      const onboarding = $('voice-onboarding-screen');
+      const feed = $('voice-results-screen');
+      feed.classList.remove('voice-hidden');
+      feed.style.opacity = '0';
+      onboarding.style.opacity = '1';
+      onboarding.style.transition = 'opacity .35s ease';
+      feed.style.transition = 'opacity .35s ease';
+      requestAnimationFrame(() => {
+        onboarding.style.opacity = '0';
+        feed.style.opacity = '1';
+      });
+      setTimeout(() => onboarding.classList.add('voice-hidden'), 360);
+      onboardingComplete = true;
       state.isProcessing = false;
     }, 650);
   }
@@ -990,9 +1083,9 @@
     }
     state.session = session;
     const userName = session.user.user_metadata?.full_name || session.user.email?.split('@')?.[0] || 'there';
-    const initial = (userName || 'M').trim().charAt(0).toUpperCase() || 'M';
-    $('voice-logout-btn').textContent = initial;
-    state.isOnboardingComplete = false;
+    onboardingComplete = false;
+    $('voice-results-screen').classList.add('voice-hidden');
+    $('voice-onboarding-screen').classList.remove('voice-hidden');
     await playGreeting(userName);
   })();
 </script>
