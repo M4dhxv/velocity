@@ -410,13 +410,21 @@
       .voice-check.visible { display: inline-flex; }
       .voice-check .material-symbols-outlined { font-size: 34px; }
       @keyframes voice-pop { to { transform: scale(1); } }
-      .voice-results-wrap { width: min(520px,100%); background: transparent; border-radius: 22px; padding: 1.1rem; }
-      .voice-results-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .85rem; margin-bottom: 1rem; }
-      .voice-results-top h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(1.4rem, 2.6vw, 2rem); letter-spacing: -0.02em; }
-      .voice-logout-btn { border: 1px solid #d8deef; background: #fff; color: #5f6a86; border-radius: 999px; padding: .45rem .9rem; cursor: pointer; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; transition: all .2s; }
-      .voice-logout-btn:hover { border-color: #aeb9d4; color: #1f2738; }
-      .voice-profile-pills { display: flex; flex-wrap: wrap; gap: .45rem; margin-bottom: 1rem; }
-      .voice-pill { font-size: .76rem; font-weight: 700; color: #34507c; background: #eef4ff; padding: .3rem .58rem; border-radius: 999px; border: 1px solid #d4e0fb; }
+      .voice-results-wrap { width: min(460px,100%); background: #f6f6ff; border-radius: 22px; padding: 0; min-height: 100vh; position: relative; overflow: hidden; }
+      .voice-feed-topbar { position: sticky; top: 0; z-index: 6; background: #eef0ff; display: flex; align-items: center; justify-content: space-between; padding: .95rem 1rem; }
+      .voice-feed-logo { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.35rem; font-weight: 900; font-style: italic; letter-spacing: -.03em; color: #006a33; text-transform: uppercase; }
+      .voice-avatar-btn, .voice-settings-btn { width: 40px; height: 40px; border-radius: 999px; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+      .voice-avatar-btn { background: #d9e2ff; color: #1f2b45; font-weight: 800; }
+      .voice-settings-btn { background: transparent; color: #5f6a86; }
+      .voice-feed-main { padding: 1rem 1rem 6.2rem; }
+      .voice-hero-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(2rem, 8vw, 2.35rem); font-weight: 800; line-height: 1.08; letter-spacing: -.03em; color: #272e42; margin-bottom: .6rem; }
+      .voice-hero-highlight { color: #006a33; position: relative; display: inline-block; }
+      .voice-hero-highlight::after { content: ''; position: absolute; left: 0; right: 0; bottom: -5px; height: 8px; border-radius: 999px; background: #3fff8b; opacity: .55; }
+      .voice-transition { font-size: .8rem; font-weight: 700; color: #627093; margin-bottom: .9rem; }
+      .voice-profile-pills { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .35rem; margin-bottom: .95rem; }
+      .voice-profile-pills::-webkit-scrollbar { display: none; }
+      .voice-pill { white-space: nowrap; font-size: .76rem; font-weight: 800; color: #2f466f; background: #d9e2ff; padding: .52rem .8rem; border-radius: 10px; border: none; font-family: 'Plus Jakarta Sans', sans-serif; }
+      .voice-pill.active { background: #3fff8b; color: #005d2c; box-shadow: 0 6px 18px rgba(63,255,139,.26); }
       .voice-resume-card { margin-bottom: 1rem; border: 1px solid #dbe3f8; background: #fff; border-radius: 16px; padding: .95rem; box-shadow: 0 8px 20px rgba(39,46,66,.06); }
       .voice-resume-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: .9rem; font-weight: 800; color: #1f2b45; margin-bottom: .4rem; display: flex; align-items: center; gap: .35rem; }
       .voice-resume-text { font-size: .8rem; color: #4a5a7c; line-height: 1.5; white-space: pre-wrap; }
@@ -424,15 +432,22 @@
       .voice-resume-btn { border: none; border-radius: 999px; padding: .4rem .75rem; font-size: .74rem; font-weight: 800; cursor: pointer; }
       .voice-resume-btn.primary { background: #3fff8b; color: #005d2c; }
       .voice-resume-btn.secondary { background: #eef4ff; color: #29416b; }
-      .voice-jobs-list { display: grid; gap: .7rem; }
-      .voice-job-card { border: 1px solid #e3e8f6; border-radius: 18px; padding: 1rem; display: flex; align-items: center; justify-content: space-between; gap: .7rem; background: #fff; box-shadow: 0 10px 24px rgba(39,46,66,.08); }
+      .voice-jobs-list { display: grid; gap: .85rem; }
+      .voice-job-card { border: 1px solid #e3e8f6; border-radius: 22px; padding: 1rem; display: flex; align-items: flex-start; justify-content: space-between; gap: .7rem; background: #fff; box-shadow: 0 12px 28px rgba(39,46,66,.09); }
       .voice-job-side { display: flex; flex-direction: column; align-items: flex-end; gap: .35rem; }
-      .voice-job-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: .95rem; font-weight: 700; color: #1e2a43; }
-      .voice-job-meta { margin-top: .32rem; font-size: .78rem; color: #647191; font-weight: 600; }
-      .voice-job-type { font-size: .7rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; border-radius: 999px; padding: .24rem .58rem; border: 1px solid #d7e0f6; color: #395886; white-space: nowrap; }
-      .voice-match { font-size: .7rem; font-weight: 800; color: #006a33; margin-top: .22rem; }
+      .voice-job-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1rem; font-weight: 800; color: #1e2a43; line-height: 1.25; }
+      .voice-job-pay { margin-top: .25rem; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.45rem; font-weight: 900; color: #006a33; letter-spacing: -.03em; }
+      .voice-job-meta { margin-top: .25rem; font-size: .78rem; color: #647191; font-weight: 700; }
+      .voice-job-type { font-size: .68rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; border-radius: 999px; padding: .26rem .58rem; border: 1px solid #d7e0f6; color: #395886; white-space: nowrap; }
+      .voice-match { font-size: .72rem; font-weight: 800; color: #006a33; margin-top: .28rem; }
       .voice-match-badge { font-size: .72rem; font-weight: 800; background: #3fff8b; color: #005d2c; border-radius: 999px; padding: .28rem .56rem; white-space: nowrap; }
+      .voice-job-actions { margin-top: .6rem; display: flex; gap: .5rem; }
+      .voice-job-grab { border: none; border-radius: 999px; background: #3fff8b; color: #005d2c; font-weight: 800; font-size: .75rem; padding: .42rem .85rem; }
+      .voice-job-save { border: none; border-radius: 999px; background: #e2e7ff; color: #2f466f; font-weight: 800; font-size: .75rem; padding: .42rem .85rem; }
       .voice-type-btn { width: 100%; margin-top: 1rem; border: none; padding: .9rem 1rem; border-radius: 999px; font-weight: 800; font-family: 'Plus Jakarta Sans', sans-serif; background: #d9e2ff; color: #272e42; }
+      .voice-bottom-nav { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,.75); backdrop-filter: blur(12px); border-top-left-radius: 24px; border-top-right-radius: 24px; box-shadow: 0 -12px 34px rgba(39,46,66,.1); padding: .65rem 1.35rem 1.1rem; display: flex; align-items: center; justify-content: space-between; }
+      .voice-nav-item { border: none; background: transparent; color: #5d6989; }
+      .voice-nav-item.active { background: #3fff8b; color: #005d2c; width: 42px; height: 42px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 0 18px rgba(63,255,139,.4); }
     `;
     document.head.appendChild(style);
   }
@@ -460,13 +475,24 @@
       </section>
       <section id="voice-results-screen" class="voice-screen voice-hidden">
         <div class="voice-results-wrap">
-          <div class="voice-results-top">
-            <h2>Top matches for you</h2>
-            <button id="voice-logout-btn" class="voice-logout-btn" type="button">Log out</button>
-          </div>
-          <div id="voice-profile-pills" class="voice-profile-pills"></div>
-          <div id="voice-resume-card" class="voice-resume-card"></div>
-          <div id="voice-jobs-list" class="voice-jobs-list"></div>
+          <header class="voice-feed-topbar">
+            <button id="voice-logout-btn" class="voice-avatar-btn" type="button" title="Log out">M</button>
+            <h2 class="voice-feed-logo">Velocity</h2>
+            <button class="voice-settings-btn" type="button" title="Settings"><span class="material-symbols-outlined">settings</span></button>
+          </header>
+          <main class="voice-feed-main">
+            <h3 class="voice-hero-title">Top matches for<br><span class="voice-hero-highlight">you</span></h3>
+            <p class="voice-transition">Using your profile preferences</p>
+            <div id="voice-profile-pills" class="voice-profile-pills"></div>
+            <div id="voice-resume-card" class="voice-resume-card"></div>
+            <div id="voice-jobs-list" class="voice-jobs-list"></div>
+          </main>
+          <nav class="voice-bottom-nav" aria-label="bottom navigation">
+            <button class="voice-nav-item active" type="button"><span class="material-symbols-outlined">bolt</span></button>
+            <button class="voice-nav-item" type="button"><span class="material-symbols-outlined">explore</span></button>
+            <button class="voice-nav-item" type="button"><span class="material-symbols-outlined">account_balance_wallet</span></button>
+            <button class="voice-nav-item" type="button"><span class="material-symbols-outlined">person</span></button>
+          </nav>
         </div>
       </section>
     `;
@@ -580,8 +606,13 @@
       <article class="voice-job-card">
         <div>
           <h3 class="voice-job-title">${job.title}</h3>
-          <p class="voice-job-meta">${job.pay} · ${job.location}</p>
+          <p class="voice-job-pay">${job.pay}</p>
+          <p class="voice-job-meta">${job.location}</p>
           <p class="voice-match">Matched to your profile</p>
+          <div class="voice-job-actions">
+            <button class="voice-job-grab" type="button">Grab</button>
+            <button class="voice-job-save" type="button">Save</button>
+          </div>
         </div>
         <div class="voice-job-side">
           <span class="voice-match-badge">${score}% match</span>
@@ -599,7 +630,7 @@
     if (profile?.level) pills.push(`Level: ${profile.level}`);
     if (profile?.work_type) pills.push(`Work type: ${profile.work_type}`);
     if (!pills.length) pills.push('Profile ready');
-    $('voice-profile-pills').innerHTML = pills.map((p) => `<span class="voice-pill">${p}</span>`).join('');
+    $('voice-profile-pills').innerHTML = pills.map((p, idx) => `<span class="voice-pill ${idx === 0 ? 'active' : ''}">${p}</span>`).join('');
   }
 
   function buildResumeText(profile) {
@@ -908,6 +939,8 @@
     }
     state.session = session;
     const userName = session.user.user_metadata?.full_name || session.user.email?.split('@')?.[0] || 'there';
+    const initial = (userName || 'M').trim().charAt(0).toUpperCase() || 'M';
+    $('voice-logout-btn').textContent = initial;
     state.isOnboardingComplete = false;
     await playGreeting(userName);
   })();
