@@ -326,7 +326,11 @@
     /* RESPONSIVE */
     @media (max-width: 1024px) {
       .hero-inner { grid-template-columns: 1fr; }
-      .hero-visual { display: none; }
+      .hero-content { text-align: center; }
+      .hero-content p { margin-left: auto; margin-right: auto; }
+      .hero-actions { justify-content: center; }
+      .hero-visual { width: 100%; max-width: 640px; margin: 0 auto; }
+      .feed-viewport { height: 252px; }
       .cat-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 768px) {
@@ -344,6 +348,8 @@
       .hero-actions { flex-direction: column; }
       nav { padding: 0 1.25rem; }
       .hero { padding: 88px 1.25rem 3rem; }
+      .hero-visual { max-width: 100%; }
+      .feed-viewport { height: 236px; }
       .how, .categories, .pricing { padding: 4rem 1.25rem; }
       .stats { padding: 3rem 1.25rem; }
       .cta-strip { padding: 4rem 1.25rem; }
