@@ -137,7 +137,7 @@ Normalization includes:
 
 ### Trigger ingestion
 
-- Vercel cron: runs every 4 hours via [vercel.json](vercel.json)
+- Vercel cron: runs daily (03:00 UTC) via [vercel.json](vercel.json)
 - Manual (local):
 
 ```bash
