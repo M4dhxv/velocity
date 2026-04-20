@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node --watch server.js",
     "start": "node server.js",
-    "dev:vercel": "vercel dev"
+    "dev:vercel": "vercel dev",
+    "ingest:jobs": "node scripts/ingest-jobs.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",

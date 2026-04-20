@@ -10,6 +10,7 @@ import {
   transcribeAudio,
   upsertUserProfile,
 } from './lib/onboarding.js';
+import { ingestJobs } from './lib/jobs-ingestion.js';
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -161,6 +162,62 @@ app.get('/api/onboard/debug-save', async (_req, res) => {
     return res.status(500).json({
       success: false,
       message: 'save_failed',
+      detail: error?.message || 'unknown_error',
+    });
+  }
+});
+
+app.post('/api/jobs/ingest', async (req, res) => {
+  try {
+    const secret = process.env.CRON_SECRET || process.env.INGEST_CRON_SECRET;
+    if (secret) {
+      const authHeader = String(req.headers?.authorization || '');
+      const cronHeader = String(req.headers?.['x-cron-secret'] || '');
+      const authorized = authHeader === `Bearer ${secret}` || cronHeader === secret;
+      if (!authorized) {
+        return res.status(401).json({ success: false, message: 'unauthorized' });
+      }
+    }
+
+    const result = await ingestJobs({
+      upworkInput: req.body?.upwork_input,
+      upworkTargets: req.body?.upwork_targets,
+      upworkDatasetIds: req.body?.upwork_dataset_ids,
+      linkedinInput: req.body?.linkedin_input,
+      linkedinDatasetIds: req.body?.linkedin_dataset_ids,
+      useStoredRuns: req.body?.use_stored_runs,
+      upworkActorId: req.body?.upwork_actor_id,
+      linkedinActorId: req.body?.linkedin_actor_id,
+    });
+
+    return res.status(200).json({ success: true, ...result });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'jobs_ingest_failed',
+      detail: error?.message || 'unknown_error',
+    });
+  }
+});
+
+app.get('/api/jobs/ingest', async (req, res) => {
+  try {
+    const secret = process.env.CRON_SECRET || process.env.INGEST_CRON_SECRET;
+    if (secret) {
+      const authHeader = String(req.headers?.authorization || '');
+      const cronHeader = String(req.headers?.['x-cron-secret'] || '');
+      const authorized = authHeader === `Bearer ${secret}` || cronHeader === secret;
+      if (!authorized) {
+        return res.status(401).json({ success: false, message: 'unauthorized' });
+      }
+    }
+
+    const result = await ingestJobs();
+    return res.status(200).json({ success: true, ...result });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'jobs_ingest_failed',
       detail: error?.message || 'unknown_error',
     });
   }

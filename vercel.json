@@ -2,6 +2,15 @@
   "functions": {
     "api/onboard/*.js": {
       "maxDuration": 30
+    },
+    "api/jobs/*.js": {
+      "maxDuration": 300
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/jobs/ingest",
+      "schedule": "0 */4 * * *"
+    }
+  ]
 }

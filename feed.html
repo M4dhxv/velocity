@@ -354,6 +354,8 @@
     transcriptLive: '',
     aiAudioPlaying: false,
     processingTagTimer: null,
+    marketJobs: [],
+    jobsLoaded: false,
   };
   let onboardingComplete = false;
 
@@ -747,56 +749,189 @@
     setStatus('Tap the mic and start speaking.');
   }
 
-  function buildMatches(profile) {
-    const jobs = [...fallbackJobs];
-    const skills = Array.isArray(profile?.skills) && profile.skills.length
-      ? profile.skills.map((s) => String(s).toLowerCase())
-      : extractKeywordTags(state.transcriptLive).map((s) => String(s).toLowerCase());
-    const interests = Array.isArray(profile?.interests) ? profile.interests.map((s) => String(s).toLowerCase()) : [];
-    const workType = String(profile?.work_type || '').toLowerCase();
+  function formatMoney(value, currency = 'USD') {
+    const amount = Number(value);
+    if (!Number.isFinite(amount) || amount <= 0) return '';
+    const rounded = Math.round(amount);
+    if (currency === 'USD') return `$${rounded}`;
+    return `${rounded} ${currency}`;
+  }
 
-    const keywordHit = (needle, haystack) => {
-      if (!needle) return false;
-      const n = needle.toLowerCase();
-      if (haystack.includes(n)) return true;
-      const compact = n.replace(/[^a-z0-9]+/g, ' ').trim();
-      return compact.length > 2 && haystack.includes(compact);
+  function formatPayFromRow(row = {}) {
+    const currency = String(row.currency || 'USD').toUpperCase();
+    const budget = Number(row.budget);
+    const min = Number(row.hourly_rate_min);
+    const max = Number(row.hourly_rate_max);
+
+    if (Number.isFinite(budget) && budget > 0) {
+      return formatMoney(budget, currency);
+    }
+
+    if (Number.isFinite(min) && Number.isFinite(max) && min > 0 && max > 0) {
+      return `${formatMoney(min, currency)}–${formatMoney(max, currency)}/hr`;
+    }
+
+    if (Number.isFinite(min) && min > 0) {
+      return `${formatMoney(min, currency)}/hr`;
+    }
+
+    if (Number.isFinite(max) && max > 0) {
+      return `${formatMoney(max, currency)}/hr`;
+    }
+
+    return 'Pay varies';
+  }
+
+  function toDisplayType(type = '') {
+    const t = String(type || '').trim().toLowerCase();
+    if (!t) return 'Remote';
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+
+  function mapDbJob(row = {}) {
+    return {
+      title: String(row.title || 'Untitled job').trim(),
+      type: toDisplayType(row.type),
+      pay: formatPayFromRow(row),
+      location: String(row.location || 'Anywhere').trim() || 'Anywhere',
+      keywords: Array.isArray(row.skills) ? row.skills.map((s) => String(s).toLowerCase()) : [],
+      source: String(row.source || '').trim().toUpperCase(),
+      sourceUrl: String(row.source_url || '').trim(),
+      description: String(row.description || '').trim(),
+      postedAt: row.posted_at || null,
     };
+  }
+
+  async function loadMarketJobs(force = false) {
+    if (state.jobsLoaded && !force) return state.marketJobs;
+
+    try {
+      const { data, error } = await sb
+        .from('jobs')
+        .select('title, description, skills, type, budget, hourly_rate_min, hourly_rate_max, currency, location, source, source_url, posted_at')
+        .order('posted_at', { ascending: false })
+        .limit(600);
+
+      if (error) throw error;
+
+      const mapped = (Array.isArray(data) ? data : [])
+        .map((row) => mapDbJob(row))
+        .filter((job) => job.title);
+
+      state.marketJobs = mapped;
+      state.jobsLoaded = true;
+      return mapped;
+    } catch (error) {
+      console.error('jobs_fetch_failed', error);
+      state.jobsLoaded = true;
+      state.marketJobs = [];
+      return [];
+    }
+  }
+
+  function buildMatches(profile) {
+    const jobs = state.marketJobs.length ? [...state.marketJobs] : [...fallbackJobs];
+    const skills = Array.isArray(profile?.skills) && profile.skills.length
+      ? profile.skills.map((s) => String(s))
+      : extractKeywordTags(state.transcriptLive).map((s) => String(s));
+    const interests = Array.isArray(profile?.interests) ? profile.interests.map((s) => String(s)) : [];
+
+    const normalizeWorkType = (value = '') => {
+      const t = String(value || '').toLowerCase().trim();
+      if (!t) return 'any';
+      if (t.includes('remote')) return 'remote';
+      if (t.includes('local') || t.includes('onsite') || t.includes('on-site')) return 'local';
+      if (t.includes('part')) return 'part-time';
+      if (t.includes('quick') || t.includes('short')) return 'quick';
+      return t;
+    };
+
+    const tokenize = (value = '') => String(value)
+      .toLowerCase()
+      .replace(/[^a-z0-9+.#-]+/g, ' ')
+      .split(/\s+/)
+      .filter((t) => t.length > 1);
+
+    const skillAliases = {
+      react: ['react', 'frontend', 'javascript', 'js'],
+      'mern stack': ['mern', 'mongodb', 'express', 'react', 'node', 'backend', 'frontend'],
+      'node.js': ['node', 'nodejs', 'backend', 'javascript', 'js'],
+      python: ['python', 'automation', 'backend'],
+      'video editing': ['video', 'editing', 'content', 'ugc'],
+      writing: ['writing', 'copy', 'content', 'proofreading'],
+      design: ['design', 'figma', 'ui', 'graphics'],
+      'remote work': ['remote'],
+      'local work': ['local', 'onsite', 'on-site'],
+      delivery: ['delivery', 'courier', 'driving', 'local'],
+    };
+
+    const expandTerms = (terms = []) => {
+      const out = new Set();
+      terms.forEach((term) => {
+        const raw = String(term || '').toLowerCase().trim();
+        if (!raw) return;
+        out.add(raw);
+        tokenize(raw).forEach((t) => out.add(t));
+        const aliases = skillAliases[raw] || [];
+        aliases.forEach((a) => out.add(a));
+      });
+      return [...out].filter((t) => t.length > 1);
+    };
+
+    const expandedSkills = expandTerms(skills);
+    const expandedInterests = expandTerms(interests);
+    const workType = normalizeWorkType(profile?.work_type);
 
     const scored = jobs.map((job) => {
       const haystack = `${job.title} ${job.type} ${job.location} ${(job.keywords || []).join(' ')}`.toLowerCase();
+      const jobTokens = new Set(tokenize(haystack));
+      const jobType = normalizeWorkType(job.type);
       let score = 0;
-      skills.forEach((s) => { if (keywordHit(s, haystack)) score += 3; });
-      interests.forEach((i) => { if (keywordHit(i, haystack)) score += 2; });
-      if (workType && workType !== 'any' && haystack.includes(workType)) score += 2;
-      if (job.type.toLowerCase() === 'remote' && workType === 'remote') score += 1;
-      if (job.type.toLowerCase() === 'local' && workType === 'local') score += 1;
+
+      expandedSkills.forEach((skill) => {
+        if (jobTokens.has(skill)) score += 4;
+        else if (haystack.includes(skill)) score += 2;
+      });
+
+      expandedInterests.forEach((interest) => {
+        if (jobTokens.has(interest)) score += 2;
+        else if (haystack.includes(interest)) score += 1;
+      });
+
+      if (workType !== 'any') {
+        if (jobType === workType) score += 3;
+        if ((workType === 'remote' && jobType === 'local') || (workType === 'local' && jobType === 'remote')) score -= 2;
+      }
+
+      score = Math.max(0, score);
       return { ...job, _score: score };
     });
 
     scored.sort((a, b) => b._score - a._score);
-    let matches = scored;
-    if (!matches.length) {
-      matches = [...fallbackJobs];
-    }
-    return matches;
+    const meaningful = scored.filter((j) => Number(j._score) > 0);
+    if (meaningful.length) return meaningful.slice(0, 8);
+    return [...fallbackJobs].map((job) => ({ ...job, _score: 1, _fallback: true }));
   }
 
   function renderJobs(profile) {
     const matches = buildMatches(profile);
     const maxScore = Math.max(1, ...matches.map((m) => Number(m._score || 0)));
+    const minScore = Math.min(...matches.map((m) => Number(m._score || 0)));
     $('voice-jobs-list').innerHTML = matches.map((job, index) => {
       const rawScore = Number(job._score || 0);
-      const score = Math.max(62, Math.min(97, Math.round((rawScore / maxScore) * 34) + 63));
+      const score = job._fallback
+        ? Math.max(62, 74 - index)
+        : Math.max(65, Math.min(98, Math.round((((rawScore - minScore) / Math.max(1, maxScore - minScore)) * 30) + 68)));
+      const meta = [job.location, job.source].filter(Boolean).join(' • ');
       return `
       <article class="voice-job-card">
         <div>
           <h3 class="voice-job-title">${job.title}</h3>
           <p class="voice-job-pay">${job.pay}</p>
-          <p class="voice-job-meta">${job.location}</p>
-          <p class="voice-match">Matched to your profile</p>
+          <p class="voice-job-meta">${meta || 'Anywhere'}</p>
+          <p class="voice-match">${job._fallback ? 'Recommended for quick start' : 'Matched to your profile'}</p>
           <div class="voice-job-actions">
-            <button class="voice-job-grab" type="button">Apply</button>
+            <button class="voice-job-grab" type="button" ${job.sourceUrl ? `onclick="window.open('${job.sourceUrl.replace(/'/g, '&#39;')}', '_blank')"` : ''}>Apply</button>
             <button class="voice-job-save" type="button">Save</button>
           </div>
         </div>
@@ -1126,6 +1261,9 @@
     showCheck(true);
     setStatus('✔ Profile ready', 'success');
     state.profile = profile;
+    if (!state.marketJobs.length) {
+      await loadMarketJobs();
+    }
     renderProfile(profile);
     renderResume(profile);
     renderJobs(profile);
@@ -1175,6 +1313,7 @@
       return;
     }
     state.session = session;
+    await loadMarketJobs();
     const userName = session.user.user_metadata?.full_name || session.user.email?.split('@')?.[0] || 'there';
     onboardingComplete = false;
     $('voice-results-screen').classList.add('voice-hidden');
