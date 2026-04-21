@@ -359,6 +359,8 @@
     locationDenied: false,
     userCity: '',
     userCountry: '',
+    conversation: { step: 'name', name: null, city: null, job_type: null, skills: [] },
+    conversationTurns: [],
   };
   let onboardingComplete = false;
 
@@ -734,29 +736,55 @@
     }
   }
 
-  async function playGreeting(userName) {
-    const fallbackText = 'Hey... nice to meet you. Tell me what you’re good at and what kind of work you’re looking for.';
+  function defaultConversationState() {
+    return { step: 'name', name: null, city: null, job_type: null, skills: [] };
+  }
+
+  function normalizeConversationState(value = {}) {
+    const step = ['name', 'location', 'job_type', 'skills', 'done'].includes(value.step)
+      ? value.step
+      : 'name';
+    const name = value.name ? String(value.name).trim() : null;
+    const city = value.city ? String(value.city).trim() : null;
+    const jobTypeRaw = value.job_type ? String(value.job_type).trim().toLowerCase() : '';
+    const jobType = ['remote', 'local', 'part-time'].includes(jobTypeRaw) ? jobTypeRaw : null;
+    const skills = Array.isArray(value.skills)
+      ? value.skills.map((s) => String(s || '').trim()).filter(Boolean).slice(0, 8)
+      : [];
+    return { step, name, city, job_type: jobType, skills };
+  }
+
+  function buildConversationTranscript(conversation = {}, turns = []) {
+    const parts = [
+      conversation.name ? `Name: ${conversation.name}` : '',
+      conversation.city ? `Location: ${conversation.city}` : '',
+      conversation.job_type ? `Job type: ${conversation.job_type}` : '',
+      conversation.skills?.length ? `Skills: ${conversation.skills.join(', ')}` : '',
+      turns.length ? `Conversation: ${turns.join(' | ')}` : '',
+    ].filter(Boolean);
+    return parts.join('. ');
+  }
+
+  async function startConversation() {
+    state.conversation = defaultConversationState();
+    state.conversationTurns = [];
     setStatus('AI greeting you…');
-    try {
-      const res = await fetch('/api/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_name: userName || 'there',
-          text: fallbackText,
-        }),
-      });
-      const data = await res.json();
-      if (data?.audio_base64) {
-        await playAudioBase64(data.audio_base64);
-        setStatus('Tap the mic and start speaking.');
-        return;
-      }
-    } catch {
-      // fallback below
-    }
-    speakText(fallbackText);
-    setStatus('Tap the mic and start speaking.');
+
+    const generated = await postGenerate({
+      user_id: state.session.user.id,
+      user_input: '',
+      conversation_state: state.conversation,
+      reset: true,
+    });
+
+    state.conversation = normalizeConversationState(generated.updated_state || state.conversation);
+    const greeting = String(generated.response || '').trim();
+    if (!greeting) throw new Error('empty_ai_greeting');
+
+    await wait(randomBetween(300, 500));
+    await speakViaApiTts(greeting);
+    $('voice-live-transcript').textContent = 'Your live transcript will appear here while you speak.';
+    setStatus('Tap the mic and answer.');
   }
 
   function detectLocationAfterLogin(userId) {
@@ -820,72 +848,11 @@
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
-  function chunkConversationalText(text = '') {
-    const raw = String(text || '').trim();
-    if (!raw) return [];
-
-    const sentenceChunks = raw
-      .replace(/\s+/g, ' ')
-      .split(/(?<=[.!?])\s+/)
-      .flatMap((sentence) => sentence
-        .split(/,\s+|\s+and\s+/i)
-        .map((s) => s.trim())
-        .filter(Boolean)
-      );
-
-    const chunks = [];
-    sentenceChunks.forEach((chunk) => {
-      if (chunk.length <= 70) {
-        chunks.push(chunk);
-        return;
-      }
-
-      const words = chunk.split(/\s+/);
-      let buffer = [];
-      words.forEach((word) => {
-        buffer.push(word);
-        if (buffer.join(' ').length >= 56) {
-          chunks.push(buffer.join(' ').trim());
-          buffer = [];
-        }
-      });
-      if (buffer.length) chunks.push(buffer.join(' ').trim());
-    });
-
-    return chunks.slice(0, 5);
-  }
-
   async function speakConversationalResponse(text) {
-    const chunks = chunkConversationalText(text);
-    if (!chunks.length) return false;
-
-    await wait(randomBetween(1500, 2000));
-
-    let played = false;
-    for (let i = 0; i < chunks.length; i += 1) {
-      const ok = await speakViaApiTts(chunks[i]);
-      played = played || ok;
-      if (i < chunks.length - 1) {
-        await wait(randomBetween(600, 900));
-      }
-    }
-
-    return played;
-  }
-
-  function buildSkillSnippet(profile) {
-    const skills = Array.isArray(profile?.skills) ? profile.skills.filter(Boolean).slice(0, 2) : [];
-    if (!skills.length) return 'what you shared';
-    if (skills.length === 1) return skills[0].toLowerCase();
-    return `${skills[0].toLowerCase()} and ${skills[1].toLowerCase()}`;
-  }
-
-  function buildConversationalFollowup(profile) {
-    const skillSnippet = buildSkillSnippet(profile);
-    if (state.userCity) {
-      return `Got it... ${skillSnippet}, nice. I see you're in ${state.userCity}... should I include local gigs near you as well?`;
-    }
-    return `Got it... ${skillSnippet}, nice. Let me find something that fits you.`;
+    const phrase = String(text || '').trim();
+    if (!phrase) return false;
+    await wait(randomBetween(300, 500));
+    return speakViaApiTts(phrase);
   }
 
   function formatMoney(value, currency = 'USD') {
@@ -1365,7 +1332,6 @@
     setStatus('Processing your voice...', 'processing');
     showProcessing(true);
     const payload = { audio_base64: audioBase64, mime_type: 'audio/webm' };
-    let profile = { skills: [], experience: '', interests: [], work_type: 'any', level: 'intermediate' };
     try {
       const stt = await postStt(payload);
       const transcript = String(stt.text || '').trim();
@@ -1375,75 +1341,86 @@
 
       state.transcriptLive = transcript;
       $('voice-live-transcript').textContent = transcript;
+      state.conversationTurns.push(transcript);
       animateProcessingTags(extractKeywordTags(transcript));
 
-      await speakViaApiTts('Okay... got it.');
-      await speakViaApiTts('Give me a second... I\'m putting this together.');
+      const generated = await postGenerate({
+        user_id: state.session.user.id,
+        user_input: transcript,
+        conversation_state: state.conversation,
+      });
 
-      const [generatedResult, profileResult] = await Promise.allSettled([
-        postGenerate({ transcript, city: state.userCity, country: state.userCountry }),
-        postProfileBuild({ user_id: state.session.user.id, transcript }),
-      ]);
+      const updatedState = normalizeConversationState(generated.updated_state || state.conversation);
+      state.conversation = updatedState;
+      const aiResponse = String(generated.response || '').trim();
 
-      if (profileResult.status === 'fulfilled') {
-        profile = profileResult.value.profile || profile;
-      } else {
-        profile = buildLocalProfileFromTranscript(transcript);
+      if (aiResponse) {
+        await speakConversationalResponse(aiResponse);
       }
 
-      if (generatedResult.status === 'fulfilled' && generatedResult.value?.text) {
-        await speakConversationalResponse(generatedResult.value.text);
-      } else {
-        await speakConversationalResponse('Okay... got it.');
+      const isDone = String(generated.next_step || updatedState.step || '').trim() === 'done';
+      if (!isDone) {
+        showLoader(false);
+        showProcessing(false);
+        setStatus('Nice... tap the mic for your next answer.');
+        state.isProcessing = false;
+        return;
       }
+
+      const profileTranscript = buildConversationTranscript(state.conversation, state.conversationTurns);
+      let profile = { skills: [], experience: '', interests: [], work_type: 'any', level: 'intermediate' };
+      try {
+        const profileResult = await postProfileBuild({ user_id: state.session.user.id, transcript: profileTranscript });
+        profile = profileResult.profile || profile;
+      } catch {
+        profile = buildLocalProfileFromTranscript(profileTranscript);
+      }
+
+      if (state.processingTagTimer) {
+        clearInterval(state.processingTagTimer);
+        state.processingTagTimer = null;
+      }
+      showLoader(false);
+      showProcessing(false);
+      showCheck(true);
+      setStatus('✔ Profile ready', 'success');
+
+      state.profile = profile;
+      if (!state.marketJobs.length) {
+        await loadMarketJobs();
+      }
+      renderProfile(profile);
+      renderResume(profile);
+      renderJobs(profile);
+      setTimeout(() => {
+        const onboarding = $('voice-onboarding-screen');
+        const feed = $('voice-results-screen');
+        feed.classList.remove('voice-hidden');
+        feed.style.opacity = '0';
+        onboarding.style.opacity = '1';
+        onboarding.style.transition = 'opacity .35s ease';
+        feed.style.transition = 'opacity .35s ease';
+        requestAnimationFrame(() => {
+          onboarding.style.opacity = '0';
+          feed.style.opacity = '1';
+        });
+        setTimeout(() => onboarding.classList.add('voice-hidden'), 360);
+        onboardingComplete = true;
+        state.isProcessing = false;
+      }, 650);
     } catch (err) {
       const reason = err?.message || 'onboard_request_failed';
-      if (reason === 'audio_too_large') {
-        setStatus('Audio too long. Keep it under ~10 seconds.', 'processing');
-        speakText('Please keep your response shorter. Showing fallback matches now.');
-        profile = buildLocalProfileFromTranscript(state.transcriptLive);
-      } else if (reason === 'stt_failed' || reason === 'transcription_failed') {
-        setStatus('Speech recognition service issue. Showing fallback matches.', 'processing');
-        speakText('Speech recognition is having issues. Showing fallback matches now.');
-        profile = buildLocalProfileFromTranscript(state.transcriptLive);
+      console.error('conversation_turn_failed', reason);
+      if (reason === 'stt_failed' || reason === 'transcription_failed') {
+        setStatus('I missed that... please speak again.', 'processing');
       } else {
-        setStatus('Matching service issue. Showing fallback matches.', 'processing');
-        speakText('There was a matching service issue. Showing fallback matches now.');
-        profile = buildLocalProfileFromTranscript(state.transcriptLive);
+        setStatus('Connection issue... tap mic and retry.', 'processing');
       }
-    }
-    if (state.processingTagTimer) {
-      clearInterval(state.processingTagTimer);
-      state.processingTagTimer = null;
-    }
-    showLoader(false);
-    showProcessing(false);
-    showCheck(true);
-    setStatus('✔ Profile ready', 'success');
-    await speakViaApiTts('Nice... your profile\'s ready. Let\'s find you something good.');
-    state.profile = profile;
-    if (!state.marketJobs.length) {
-      await loadMarketJobs();
-    }
-    renderProfile(profile);
-    renderResume(profile);
-    renderJobs(profile);
-    setTimeout(() => {
-      const onboarding = $('voice-onboarding-screen');
-      const feed = $('voice-results-screen');
-      feed.classList.remove('voice-hidden');
-      feed.style.opacity = '0';
-      onboarding.style.opacity = '1';
-      onboarding.style.transition = 'opacity .35s ease';
-      feed.style.transition = 'opacity .35s ease';
-      requestAnimationFrame(() => {
-        onboarding.style.opacity = '0';
-        feed.style.opacity = '1';
-      });
-      setTimeout(() => onboarding.classList.add('voice-hidden'), 360);
-      onboardingComplete = true;
+      showLoader(false);
+      showProcessing(false);
       state.isProcessing = false;
-    }, 650);
+      return;
+    }
   }
 
   hideLegacyFeedUI();
@@ -1476,11 +1453,10 @@
     state.session = session;
     await loadMarketJobs();
     detectLocationAfterLogin(session.user.id);
-    const userName = session.user.user_metadata?.full_name || session.user.email?.split('@')?.[0] || 'there';
     onboardingComplete = false;
     $('voice-results-screen').classList.add('voice-hidden');
     $('voice-onboarding-screen').classList.remove('voice-hidden');
-    await playGreeting(userName);
+    await startConversation();
   })();
 </script>
 </body>

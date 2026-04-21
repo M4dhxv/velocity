@@ -29,13 +29,13 @@ export default async function handler(req, res) {
     }
 
     console.log('Using Deepgram TTS');
-    const response = await fetch('https://api.deepgram.com/v1/speak?model=aura-asteria-en', {
+    const response = await fetch('https://api.deepgram.com/v1/speak', {
       method: 'POST',
       headers: {
         Authorization: `Token ${deepgramApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text, model: 'aura-asteria-en' }),
     });
 
     if (!response.ok) {
