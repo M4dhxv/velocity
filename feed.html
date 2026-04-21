@@ -770,7 +770,7 @@
     state.conversationTurns = [];
     setStatus('AI greeting you…');
 
-    const generated = await postGenerate({
+    const generated = await postGenerateWithRetry({
       user_id: state.session.user.id,
       user_input: '',
       conversation_state: state.conversation,
@@ -1305,9 +1305,19 @@
     let data = null;
     try { data = text ? JSON.parse(text) : null; } catch { data = null; }
     if (!res.ok || !data?.success) {
-      throw new Error(data?.message || `generate_http_${res.status}`);
+      const reason = data?.detail ? `${data?.message || `generate_http_${res.status}`}: ${data.detail}` : (data?.message || `generate_http_${res.status}`);
+      throw new Error(reason);
     }
     return data;
+  }
+
+  async function postGenerateWithRetry(payload) {
+    try {
+      return await postGenerate(payload);
+    } catch (firstError) {
+      await wait(320);
+      return postGenerate(payload);
+    }
   }
 
   async function postProfileBuild(payload) {
@@ -1344,7 +1354,7 @@
       state.conversationTurns.push(transcript);
       animateProcessingTags(extractKeywordTags(transcript));
 
-      const generated = await postGenerate({
+      const generated = await postGenerateWithRetry({
         user_id: state.session.user.id,
         user_input: transcript,
         conversation_state: state.conversation,

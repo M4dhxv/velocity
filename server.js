@@ -24,6 +24,7 @@ getConfig();
 
 const STEP_ORDER = ['name', 'location', 'job_type', 'skills', 'done'];
 const localConversationSessions = new Map();
+const MODEL_FALLBACKS = ['gemini-2.5-flash', 'gemini-2.5-flash-latest', 'gemini-2.0-flash'];
 
 function sanitizeConversationState(candidate = {}) {
   const step = STEP_ORDER.includes(candidate.step) ? candidate.step : 'name';
@@ -220,28 +221,73 @@ app.post('/api/generate', async (req, res) => {
       'Return ONLY JSON.',
     ].join('\n');
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.5, maxOutputTokens: 220, responseMimeType: 'application/json' },
-        }),
-      }
-    );
+    const candidateModels = [geminiModel, ...MODEL_FALLBACKS.filter((m) => m !== geminiModel)];
+    let parsed = null;
+    let lastError = '';
 
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`generate_failed_${response.status}: ${String(err).slice(0, 180)}`);
+    for (const model of candidateModels) {
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ role: 'user', parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.4,
+                maxOutputTokens: 220,
+                responseMimeType: 'application/json',
+                responseSchema: {
+                  type: 'OBJECT',
+                  required: ['response', 'updated_state', 'next_step'],
+                  properties: {
+                    response: { type: 'STRING' },
+                    updated_state: {
+                      type: 'OBJECT',
+                      required: ['step', 'name', 'city', 'job_type', 'skills'],
+                      properties: {
+                        step: { type: 'STRING', enum: STEP_ORDER },
+                        name: { type: 'STRING', nullable: true },
+                        city: { type: 'STRING', nullable: true },
+                        job_type: { type: 'STRING', enum: ['remote', 'local', 'part-time', ''], nullable: true },
+                        skills: { type: 'ARRAY', items: { type: 'STRING' } },
+                      },
+                    },
+                    next_step: { type: 'STRING', enum: STEP_ORDER },
+                  },
+                },
+              },
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          const err = await response.text();
+          lastError = `generate_failed_${response.status}: ${String(err).slice(0, 180)}`;
+          if (response.status === 404) break;
+          if (attempt === 0) {
+            await new Promise((resolve) => setTimeout(resolve, 250));
+            continue;
+          }
+          break;
+        }
+
+        const data = await response.json();
+        const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        parsed = extractJsonObject(raw);
+        if (parsed && typeof parsed === 'object') break;
+        lastError = 'gemini_invalid_json';
+        if (attempt === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 200));
+          continue;
+        }
+      }
+      if (parsed && typeof parsed === 'object') break;
     }
 
-    const data = await response.json();
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const parsed = extractJsonObject(raw);
     if (!parsed || typeof parsed !== 'object') {
-      throw new Error('gemini_invalid_json');
+      throw new Error(lastError || 'gemini_invalid_json');
     }
 
     const safeResponse = String(parsed.response || '').replace(/\s+/g, ' ').trim();
