@@ -167,9 +167,9 @@ export default async function handler(req, res) {
                       required: ['step', 'name', 'city', 'job_type', 'skills'],
                       properties: {
                         step: { type: 'STRING', enum: STEP_ORDER },
-                        name: { type: 'STRING', nullable: true },
-                        city: { type: 'STRING', nullable: true },
-                        job_type: { type: 'STRING', enum: ['remote', 'local', 'part-time', ''], nullable: true },
+                        name: { type: 'STRING' },
+                        city: { type: 'STRING' },
+                        job_type: { type: 'STRING', enum: ['remote', 'local', 'part-time'] },
                         skills: { type: 'ARRAY', items: { type: 'STRING' } },
                       },
                     },
