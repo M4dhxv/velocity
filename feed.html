@@ -803,9 +803,9 @@
       const data = await res.json();
       if (data?.audio_base64) return playAudioBase64(data.audio_base64);
     } catch {
-      // fallback below
+      // no-op
     }
-    return speakText(prompt);
+    return false;
   }
 
   function wait(ms) {
