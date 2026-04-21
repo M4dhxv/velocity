@@ -6,8 +6,10 @@ import {
   buildOnboardingTtsTexts,
   extractProfileFromTranscript,
   getConfig,
+  reverseGeocodeCityCountry,
   synthesizeSpeech,
   transcribeAudio,
+  upsertUserLocation,
   upsertUserProfile,
 } from './lib/onboarding.js';
 import { ingestJobs } from './lib/jobs-ingestion.js';
@@ -29,6 +31,47 @@ app.get('/api/onboard/start', async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ success: false, message: 'start_failed' });
+  }
+});
+
+app.post('/api/tts', async (req, res) => {
+  try {
+    const name = String(req.body?.user_name || 'there').trim();
+    const fallbackText = `Hey ${name}, nice to meet you. Tell me your top skills and what work you want.`;
+    const text = String(req.body?.text || fallbackText).trim().slice(0, 180);
+    if (!text) return res.status(400).json({ success: false, message: 'invalid_text' });
+
+    const audioBase64 = await synthesizeSpeech(text, {
+      languageCode: 'en-US',
+      voiceName: 'en-US-Neural2-C',
+      speakingRate: 1.02,
+    });
+
+    return res.status(200).json({ success: true, audio_base64: audioBase64 });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'tts_failed' });
+  }
+});
+
+app.post('/api/location', async (req, res) => {
+  try {
+    const userId = String(req.body?.user_id || '').trim();
+    const latitude = Number(req.body?.latitude);
+    const longitude = Number(req.body?.longitude);
+    if (!userId || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      return res.status(400).json({ success: false, message: 'invalid_input' });
+    }
+
+    const location = await reverseGeocodeCityCountry(latitude, longitude);
+    await upsertUserLocation(userId, location);
+
+    return res.status(200).json({
+      success: true,
+      city: location.city || null,
+      country: location.country || null,
+    });
+  } catch (error) {
+    return res.status(200).json({ success: false, message: 'location_save_failed' });
   }
 });
 

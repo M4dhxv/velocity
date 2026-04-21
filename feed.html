@@ -356,6 +356,9 @@
     processingTagTimer: null,
     marketJobs: [],
     jobsLoaded: false,
+    locationDenied: false,
+    userCity: '',
+    userCountry: '',
   };
   let onboardingComplete = false;
 
@@ -732,10 +735,17 @@
   }
 
   async function playGreeting(userName) {
-    const fallbackText = 'Hey, nice to meet you. Tell me about yourself. What are your skills and what kind of work are you looking for?';
+    const fallbackText = `Hey ${userName || 'there'}, nice to meet you. Tell me your top skills and what work you want.`;
     setStatus('AI greeting you…');
     try {
-      const res = await fetch(`/api/onboard/start?user_name=${encodeURIComponent(userName || 'there')}`);
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_name: userName || 'there',
+          text: fallbackText,
+        }),
+      });
       const data = await res.json();
       if (data?.audio_base64) {
         await playAudioBase64(data.audio_base64);
@@ -747,6 +757,70 @@
     }
     speakText(fallbackText);
     setStatus('Tap the mic and start speaking.');
+  }
+
+  function detectLocationAfterLogin(userId) {
+    if (!navigator.geolocation || !userId) {
+      state.locationDenied = true;
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const res = await fetch('/api/location', {
+            method: 'POST',
+            body: JSON.stringify({ user_id: userId, latitude, longitude }),
+            headers: { 'Content-Type': 'application/json' },
+          });
+          const data = await res.json().catch(() => null);
+          if (data?.success) {
+            state.userCity = String(data.city || '').trim();
+            state.userCountry = String(data.country || '').trim();
+          }
+        } catch (error) {
+          console.error('location_submit_failed', error);
+        }
+      },
+      () => {
+        console.log('Location denied');
+        state.locationDenied = true;
+      },
+      { timeout: 7000, maximumAge: 120000 }
+    );
+  }
+
+  async function speakViaApiTts(text) {
+    const prompt = String(text || '').trim();
+    if (!prompt) return false;
+    try {
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: prompt, user_name: state.session?.user?.user_metadata?.full_name || 'there' }),
+      });
+      const data = await res.json();
+      if (data?.audio_base64) return playAudioBase64(data.audio_base64);
+    } catch {
+      // fallback below
+    }
+    return speakText(prompt);
+  }
+
+  function buildSkillSnippet(profile) {
+    const skills = Array.isArray(profile?.skills) ? profile.skills.filter(Boolean).slice(0, 2) : [];
+    if (!skills.length) return 'what you shared';
+    if (skills.length === 1) return skills[0].toLowerCase();
+    return `${skills[0].toLowerCase()} and ${skills[1].toLowerCase()}`;
+  }
+
+  function buildConversationalFollowup(profile) {
+    const skillSnippet = buildSkillSnippet(profile);
+    if (state.userCity) {
+      return `Got it... ${skillSnippet}, nice. I see you're in ${state.userCity}... should I include local gigs near you as well?`;
+    }
+    return `Got it... ${skillSnippet}, nice. Let me find something that fits you.`;
   }
 
   function formatMoney(value, currency = 'USD') {
@@ -880,7 +954,13 @@
 
     const expandedSkills = expandTerms(skills);
     const expandedInterests = expandTerms(interests);
-    const workType = normalizeWorkType(profile?.work_type);
+    let workType = normalizeWorkType(profile?.work_type);
+    if (state.userCity) {
+      workType = 'any';
+    }
+    if (workType === 'any' && state.locationDenied) {
+      workType = 'remote';
+    }
 
     const scored = jobs.map((job) => {
       const haystack = `${job.title} ${job.type} ${job.location} ${(job.keywords || []).join(' ')}`.toLowerCase();
@@ -1200,7 +1280,8 @@
     showLoader(true);
     showCheck(false);
     setStatus('Got it. Building your profile...', 'processing');
-    speakText('Got it. Building your profile now.');
+    await speakViaApiTts(['Okay... got it.', 'Nice... understood.', 'Alright... that makes sense.'][Math.floor(Math.random() * 3)]);
+    await speakViaApiTts('Give me a second... I\'m putting your profile together.');
     showProcessing(true);
     animateProcessingTags(extractKeywordTags(state.transcriptLive));
     const payload = { user_id: state.session.user.id, audio_base64: audioBase64 };
@@ -1210,10 +1291,7 @@
       if (data?.success) {
         profile = data.profile || profile;
         $('voice-live-transcript').textContent = state.transcriptLive || 'Voice captured.';
-        const playedAck = data.ack_audio_base64 ? await playAudioBase64(data.ack_audio_base64) : false;
-        if (!playedAck) speakText('Got it. Building your profile now.');
-        const playedSuccess = data.success_audio_base64 ? await playAudioBase64(data.success_audio_base64) : false;
-        if (!playedSuccess) speakText('Profile ready. I found top matches for you.');
+        await speakViaApiTts(buildConversationalFollowup(profile));
       } else if (data?.message === 'transcription_failed') {
         setStatus('Could not hear clearly. Using fallback matches.', 'processing');
         speakText('I could not hear clearly, but I found some matches for you.');
@@ -1260,6 +1338,7 @@
     showProcessing(false);
     showCheck(true);
     setStatus('✔ Profile ready', 'success');
+    await speakViaApiTts('Nice... your profile\'s ready. Let\'s find you something good.');
     state.profile = profile;
     if (!state.marketJobs.length) {
       await loadMarketJobs();
@@ -1314,6 +1393,7 @@
     }
     state.session = session;
     await loadMarketJobs();
+    detectLocationAfterLogin(session.user.id);
     const userName = session.user.user_metadata?.full_name || session.user.email?.split('@')?.[0] || 'there';
     onboardingComplete = false;
     $('voice-results-screen').classList.add('voice-hidden');

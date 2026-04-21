@@ -6,6 +6,8 @@ Flow:
 
 1. `/api/onboard/start` → greeting TTS
 2. `/api/onboard/respond` → STT → Gemini extraction (single call) → Supabase upsert → ack TTS + success TTS
+3. `/api/location` → reverse geocode + save `city/country` to `user_profiles`
+4. `/api/tts` → short onboarding voice prompt
 
 ## Endpoints
 
@@ -63,6 +65,7 @@ Response (no transcript):
 Create `.env` locally (Vercel uses Project Environment Variables):
 
 - `GOOGLE_API_KEY` (used for Google STT + Google TTS)
+- `GOOGLE_MAPS_API_KEY` (used for reverse geocoding)
 - `GEMINI_API_KEY`
 - `GEMINI_MODEL` (default: `gemini-2.0-flash`)
 - `SUPABASE_URL`
@@ -101,6 +104,8 @@ It creates:
 Vercel routes used:
 - [api/onboard/start.js](api/onboard/start.js)
 - [api/onboard/respond.js](api/onboard/respond.js)
+- [api/location.js](api/location.js)
+- [api/tts.js](api/tts.js)
 - [api/jobs/ingest.js](api/jobs/ingest.js)
 
 Runtime config is in [vercel.json](vercel.json).

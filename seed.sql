@@ -146,6 +146,8 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   interests JSONB NOT NULL DEFAULT '[]'::jsonb,
   work_type TEXT NOT NULL DEFAULT 'any',
   level TEXT NOT NULL DEFAULT 'intermediate',
+  city TEXT NOT NULL DEFAULT '',
+  country TEXT NOT NULL DEFAULT '',
   raw_transcript TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT user_profiles_work_type_check CHECK (work_type IN ('remote', 'local', 'part-time', 'full-time', 'any')),
@@ -153,3 +155,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 );
 
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE user_profiles
+  ADD COLUMN IF NOT EXISTS city TEXT NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS country TEXT NOT NULL DEFAULT '';
