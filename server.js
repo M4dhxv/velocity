@@ -36,20 +36,144 @@ app.get('/api/onboard/start', async (req, res) => {
 
 app.post('/api/tts', async (req, res) => {
   try {
+    const deepgramApiKey = process.env.DEEPGRAM_API_KEY;
+    if (!deepgramApiKey) {
+      return res.status(500).json({ success: false, message: 'missing_deepgram_key' });
+    }
+
     const name = String(req.body?.user_name || 'there').trim();
-    const fallbackText = `Hey ${name}, nice to meet you. Tell me your top skills and what work you want.`;
+    const fallbackText = `Hey ${name}, nice to meet you. Tell me what you're good at and what kind of work you're looking for.`;
     const text = String(req.body?.text || fallbackText).trim().slice(0, 180);
     if (!text) return res.status(400).json({ success: false, message: 'invalid_text' });
 
-    const audioBase64 = await synthesizeSpeech(text, {
-      languageCode: 'en-US',
-      voiceName: 'en-US-Neural2-C',
-      speakingRate: 1.02,
+    const response = await fetch('https://api.deepgram.com/v1/speak?model=aura-asteria-en', {
+      method: 'POST',
+      headers: {
+        Authorization: `Token ${deepgramApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text }),
     });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`deepgram_tts_failed_${response.status}: ${String(err).slice(0, 180)}`);
+    }
+
+    const audioBase64 = Buffer.from(await response.arrayBuffer()).toString('base64');
 
     return res.status(200).json({ success: true, audio_base64: audioBase64 });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'tts_failed' });
+  }
+});
+
+app.post('/api/stt', async (req, res) => {
+  try {
+    const deepgramApiKey = process.env.DEEPGRAM_API_KEY;
+    if (!deepgramApiKey) {
+      return res.status(500).json({ success: false, message: 'missing_deepgram_key' });
+    }
+
+    const audioBase64 = String(req.body?.audio_base64 || '').trim();
+    const mimeType = String(req.body?.mime_type || 'audio/webm');
+    if (!audioBase64) {
+      return res.status(400).json({ success: false, message: 'invalid_audio' });
+    }
+
+    const response = await fetch('https://api.deepgram.com/v1/listen?model=nova-2&smart_format=true', {
+      method: 'POST',
+      headers: {
+        Authorization: `Token ${deepgramApiKey}`,
+        'Content-Type': mimeType,
+      },
+      body: Buffer.from(audioBase64, 'base64'),
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`deepgram_stt_failed_${response.status}: ${String(err).slice(0, 180)}`);
+    }
+
+    const data = await response.json();
+    const text = data?.results?.channels?.[0]?.alternatives?.[0]?.transcript?.trim() || '';
+    return res.status(200).json({ success: true, text });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'stt_failed' });
+  }
+});
+
+app.post('/api/generate', async (req, res) => {
+  try {
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+    const geminiModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    if (!geminiApiKey) {
+      return res.status(500).json({ success: false, message: 'missing_gemini_key' });
+    }
+
+    const transcript = String(req.body?.transcript || '').trim();
+    const city = String(req.body?.city || '').trim();
+    const country = String(req.body?.country || '').trim();
+    if (!transcript) {
+      return res.status(400).json({ success: false, message: 'missing_transcript' });
+    }
+
+    const prompt = [
+      'You are a friendly onboarding assistant for a gig marketplace.',
+      'Rules:',
+      '- max 2 sentences total',
+      '- casual, human tone',
+      '- sound calm, warm, and slightly thoughtful',
+      '- add pauses using "..."',
+      '- lightly use fillers like "hmm", "okay", "yeah", or "oh" when natural',
+      '- reference skills briefly from the user transcript',
+      '- if city is available, mention it naturally',
+      '- do not be robotic',
+      '- do not explain',
+      '- do not repeat input',
+      city ? `Location: ${city}${country ? `, ${country}` : ''}` : 'Location unavailable',
+      `User said: "${transcript}"`,
+      'Return ONLY text.',
+    ].join('\n');
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.6, maxOutputTokens: 90 },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`generate_failed_${response.status}: ${String(err).slice(0, 180)}`);
+    }
+
+    const data = await response.json();
+    const text = String(data?.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+    return res.status(200).json({ success: true, text: text || 'Got it... let me find something that fits you.' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'generate_failed' });
+  }
+});
+
+app.post('/api/onboard/profile', async (req, res) => {
+  try {
+    const userId = String(req.body?.user_id || '').trim();
+    const transcript = String(req.body?.transcript || '').trim();
+    if (!userId || !transcript) {
+      return res.status(400).json({ success: false, message: 'invalid_input' });
+    }
+
+    const profile = await extractProfileFromTranscript(transcript);
+    await upsertUserProfile(userId, profile, transcript);
+    return res.status(200).json({ success: true, profile });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'profile_build_failed' });
   }
 });
 

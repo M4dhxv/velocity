@@ -735,7 +735,7 @@
   }
 
   async function playGreeting(userName) {
-    const fallbackText = `Hey ${userName || 'there'}, nice to meet you. Tell me your top skills and what work you want.`;
+    const fallbackText = 'Hey... nice to meet you. Tell me what you’re good at and what kind of work you’re looking for.';
     setStatus('AI greeting you…');
     try {
       const res = await fetch('/api/tts', {
@@ -806,6 +806,67 @@
       // fallback below
     }
     return speakText(prompt);
+  }
+
+  function wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  function randomBetween(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function chunkConversationalText(text = '') {
+    const raw = String(text || '').trim();
+    if (!raw) return [];
+
+    const sentenceChunks = raw
+      .replace(/\s+/g, ' ')
+      .split(/(?<=[.!?])\s+/)
+      .flatMap((sentence) => sentence
+        .split(/,\s+|\s+and\s+/i)
+        .map((s) => s.trim())
+        .filter(Boolean)
+      );
+
+    const chunks = [];
+    sentenceChunks.forEach((chunk) => {
+      if (chunk.length <= 70) {
+        chunks.push(chunk);
+        return;
+      }
+
+      const words = chunk.split(/\s+/);
+      let buffer = [];
+      words.forEach((word) => {
+        buffer.push(word);
+        if (buffer.join(' ').length >= 56) {
+          chunks.push(buffer.join(' ').trim());
+          buffer = [];
+        }
+      });
+      if (buffer.length) chunks.push(buffer.join(' ').trim());
+    });
+
+    return chunks.slice(0, 5);
+  }
+
+  async function speakConversationalResponse(text) {
+    const chunks = chunkConversationalText(text);
+    if (!chunks.length) return false;
+
+    await wait(randomBetween(1500, 2000));
+
+    let played = false;
+    for (let i = 0; i < chunks.length; i += 1) {
+      const ok = await speakViaApiTts(chunks[i]);
+      played = played || ok;
+      if (i < chunks.length - 1) {
+        await wait(randomBetween(600, 900));
+      }
+    }
+
+    return played;
   }
 
   function buildSkillSnippet(profile) {
@@ -1248,81 +1309,98 @@
     else cleanupRecordingResources();
   }
 
-  async function postOnboard(payload) {
-    const endpoints = ['/api/onboard', '/api/onboard/respond'];
-    let lastError = 'onboard_request_failed';
-    let lastDetail = '';
-    for (const endpoint of endpoints) {
-      try {
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        const text = await res.text();
-        let data = null;
-        try { data = text ? JSON.parse(text) : null; } catch { data = null; }
-        if (res.ok) return data || { success: true };
-        lastDetail = data?.detail || '';
-        if (res.status === 413) lastError = 'audio_too_large';
-        else lastError = data?.message || `http_${res.status}`;
-      } catch {
-        lastError = 'network_failed';
-      }
+  async function postStt(payload) {
+    const res = await fetch('/api/stt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const text = await res.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { data = null; }
+    if (!res.ok || !data?.success) {
+      throw new Error(data?.message || `stt_http_${res.status}`);
     }
-    const err = new Error(lastError);
-    err.detail = lastDetail;
-    throw err;
+    return data;
+  }
+
+  async function postGenerate(payload) {
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const text = await res.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { data = null; }
+    if (!res.ok || !data?.success) {
+      throw new Error(data?.message || `generate_http_${res.status}`);
+    }
+    return data;
+  }
+
+  async function postProfileBuild(payload) {
+    const res = await fetch('/api/onboard/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const text = await res.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { data = null; }
+    if (!res.ok || !data?.success) {
+      throw new Error(data?.message || `profile_http_${res.status}`);
+    }
+    return data;
   }
 
   async function submitOnboarding(audioBase64) {
     state.isProcessing = true;
     showLoader(true);
     showCheck(false);
-    setStatus('Got it. Building your profile...', 'processing');
-    await speakViaApiTts(['Okay... got it.', 'Nice... understood.', 'Alright... that makes sense.'][Math.floor(Math.random() * 3)]);
-    await speakViaApiTts('Give me a second... I\'m putting your profile together.');
+    setStatus('Processing your voice...', 'processing');
     showProcessing(true);
-    animateProcessingTags(extractKeywordTags(state.transcriptLive));
-    const payload = { user_id: state.session.user.id, audio_base64: audioBase64 };
+    const payload = { audio_base64: audioBase64, mime_type: 'audio/webm' };
     let profile = { skills: [], experience: '', interests: [], work_type: 'any', level: 'intermediate' };
     try {
-      const data = await postOnboard(payload);
-      if (data?.success) {
-        profile = data.profile || profile;
-        $('voice-live-transcript').textContent = state.transcriptLive || 'Voice captured.';
-        await speakViaApiTts(buildConversationalFollowup(profile));
-      } else if (data?.message === 'transcription_failed') {
-        setStatus('Could not hear clearly. Using fallback matches.', 'processing');
-        speakText('I could not hear clearly, but I found some matches for you.');
-        profile = buildLocalProfileFromTranscript(state.transcriptLive);
+      const stt = await postStt(payload);
+      const transcript = String(stt.text || '').trim();
+      if (!transcript) {
+        throw new Error('transcription_failed');
+      }
+
+      state.transcriptLive = transcript;
+      $('voice-live-transcript').textContent = transcript;
+      animateProcessingTags(extractKeywordTags(transcript));
+
+      await speakViaApiTts('Okay... got it.');
+      await speakViaApiTts('Give me a second... I\'m putting this together.');
+
+      const [generatedResult, profileResult] = await Promise.allSettled([
+        postGenerate({ transcript, city: state.userCity, country: state.userCountry }),
+        postProfileBuild({ user_id: state.session.user.id, transcript }),
+      ]);
+
+      if (profileResult.status === 'fulfilled') {
+        profile = profileResult.value.profile || profile;
+      } else {
+        profile = buildLocalProfileFromTranscript(transcript);
+      }
+
+      if (generatedResult.status === 'fulfilled' && generatedResult.value?.text) {
+        await speakConversationalResponse(generatedResult.value.text);
+      } else {
+        await speakConversationalResponse('Okay... got it.');
       }
     } catch (err) {
       const reason = err?.message || 'onboard_request_failed';
-      const detail = err?.detail || '';
       if (reason === 'audio_too_large') {
         setStatus('Audio too long. Keep it under ~10 seconds.', 'processing');
         speakText('Please keep your response shorter. Showing fallback matches now.');
         profile = buildLocalProfileFromTranscript(state.transcriptLive);
-      } else if (reason === 'stt_failed') {
+      } else if (reason === 'stt_failed' || reason === 'transcription_failed') {
         setStatus('Speech recognition service issue. Showing fallback matches.', 'processing');
         speakText('Speech recognition is having issues. Showing fallback matches now.');
-        profile = buildLocalProfileFromTranscript(state.transcriptLive);
-      } else if (reason === 'profile_extraction_failed') {
-        setStatus('Profile extraction failed. Check reason below.', 'processing');
-        $('voice-live-transcript').textContent = `Extraction error: ${detail || 'unknown_error'}`;
-        speakText('Profile extraction failed. I will still show your matches.');
-        profile = buildLocalProfileFromTranscript(state.transcriptLive);
-      } else if (reason === 'profile_save_failed') {
-        setStatus('Profile save issue. Showing matches anyway.', 'processing');
-        if (detail) {
-          $('voice-live-transcript').textContent = `Save error: ${detail}`;
-        }
-        speakText('There was a save issue, but I can still show your matches.');
-        profile = buildLocalProfileFromTranscript(state.transcriptLive);
-      } else if (reason === 'transcription_failed') {
-        setStatus('Could not transcribe clearly. Showing fallback matches.', 'processing');
-        speakText('I could not transcribe clearly. Showing fallback matches now.');
         profile = buildLocalProfileFromTranscript(state.transcriptLive);
       } else {
         setStatus('Matching service issue. Showing fallback matches.', 'processing');
