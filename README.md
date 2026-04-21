@@ -65,7 +65,7 @@ Response (no transcript):
 
 Create `.env` locally (Vercel uses Project Environment Variables):
 
-- `GOOGLE_API_KEY` (used for Google STT + Google TTS)
+- `GOOGLE_API_KEY` (used for Google geocoding fallback only)
 - `GOOGLE_MAPS_API_KEY` (used for reverse geocoding)
 - `DEEPGRAM_API_KEY` (used for Deepgram STT + Deepgram TTS)
 - `GEMINI_API_KEY`

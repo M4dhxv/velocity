@@ -46,13 +46,17 @@ app.post('/api/tts', async (req, res) => {
     const text = String(req.body?.text || fallbackText).trim().slice(0, 180);
     if (!text) return res.status(400).json({ success: false, message: 'invalid_text' });
 
-    const response = await fetch('https://api.deepgram.com/v1/speak?model=aura-asteria-en', {
+    console.log('Using Deepgram TTS');
+    const response = await fetch('https://api.deepgram.com/v1/speak', {
       method: 'POST',
       headers: {
         Authorization: `Token ${deepgramApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({
+        text,
+        model: 'aura-asteria-en',
+      }),
     });
 
     if (!response.ok) {
