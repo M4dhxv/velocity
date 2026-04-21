@@ -801,9 +801,13 @@
         body: JSON.stringify({ text: prompt, user_name: state.session?.user?.user_metadata?.full_name || 'there' }),
       });
       const data = await res.json();
+      if (!res.ok || !data?.success) {
+        console.error('tts_api_failed', { status: res.status, data });
+        return false;
+      }
       if (data?.audio_base64) return playAudioBase64(data.audio_base64);
     } catch {
-      // no-op
+      console.error('tts_api_failed_network');
     }
     return false;
   }

@@ -40,7 +40,11 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       const err = await response.text();
-      throw new Error(`deepgram_tts_failed_${response.status}: ${String(err).slice(0, 180)}`);
+      return res.status(502).json({
+        success: false,
+        message: 'deepgram_tts_failed',
+        detail: `deepgram_tts_failed_${response.status}: ${String(err).slice(0, 280)}`,
+      });
     }
 
     const audioBuffer = Buffer.from(await response.arrayBuffer());
@@ -49,6 +53,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true, audio_base64: audioBase64 });
   } catch (error) {
     console.error('tts_failed', error);
-    return res.status(500).json({ success: false, message: 'tts_failed' });
+    return res.status(500).json({ success: false, message: 'tts_failed', detail: error?.message || 'unknown_error' });
   }
 }
