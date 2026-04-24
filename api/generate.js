@@ -8,9 +8,32 @@ function parseBody(req) {
   }
 }
 
+function cleanNullableString(value) {
+  const text = String(value || '').trim();
+  if (!text || text.toLowerCase() === 'null' || text.toLowerCase() === 'undefined') return null;
+  return text;
+}
+
 const STEP_ORDER = ['name', 'location', 'job_type', 'skills', 'done'];
 const sessionConversations = new Map();
-const MODEL_FALLBACKS = ['gemini-2.5-flash', 'gemini-2.5-flash-latest', 'gemini-2.0-flash'];
+const MODEL_FALLBACKS = [];
+
+function buildFallbackConversationResponse(baseState, userInput) {
+  const text = String(userInput || '').trim();
+  const normalized = sanitizeConversationState(baseState);
+  const updated = {
+    ...normalized,
+    step: text ? 'done' : 'name',
+  };
+
+  return {
+    response: text
+      ? 'Nice, I’ve got enough to build your profile now.'
+      : 'Hey — what should I call you?',
+    updated_state: updated,
+    next_step: updated.step,
+  };
+}
 
 function extractJsonObject(rawText = '') {
   const trimmed = String(rawText || '').trim();
@@ -32,8 +55,8 @@ function extractJsonObject(rawText = '') {
 
 function sanitizeConversationState(candidate = {}) {
   const step = STEP_ORDER.includes(candidate.step) ? candidate.step : 'name';
-  const name = String(candidate.name || '').trim() || null;
-  const city = String(candidate.city || '').trim() || null;
+  const name = cleanNullableString(candidate.name);
+  const city = cleanNullableString(candidate.city);
   const normalizedJob = String(candidate.job_type || '').trim().toLowerCase();
   const jobType = ['remote', 'local', 'part-time'].includes(normalizedJob) ? normalizedJob : null;
 
@@ -206,7 +229,17 @@ export default async function handler(req, res) {
     }
 
     if (!parsed || typeof parsed !== 'object') {
-      throw new Error(lastError || 'gemini_invalid_json');
+      const fallback = buildFallbackConversationResponse(baseState, userInput);
+      sessionConversations.set(userId, sanitizeConversationState(fallback.updated_state));
+
+      return res.status(200).json({
+        success: true,
+        response: fallback.response,
+        updated_state: fallback.updated_state,
+        next_step: fallback.next_step,
+        fallback_used: true,
+        detail: lastError || 'gemini_invalid_json',
+      });
     }
 
     const safeResponse = String(parsed.response || '').replace(/\s+/g, ' ').trim();
@@ -219,7 +252,17 @@ export default async function handler(req, res) {
     });
 
     if (!safeResponse) {
-      throw new Error('gemini_empty_response');
+      const fallback = buildFallbackConversationResponse(baseState, userInput);
+      sessionConversations.set(userId, sanitizeConversationState(fallback.updated_state));
+
+      return res.status(200).json({
+        success: true,
+        response: fallback.response,
+        updated_state: fallback.updated_state,
+        next_step: fallback.next_step,
+        fallback_used: true,
+        detail: 'gemini_empty_response',
+      });
     }
     sessionConversations.set(userId, normalized);
 

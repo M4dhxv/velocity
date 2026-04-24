@@ -744,8 +744,13 @@
     const step = ['name', 'location', 'job_type', 'skills', 'done'].includes(value.step)
       ? value.step
       : 'name';
-    const name = value.name ? String(value.name).trim() : null;
-    const city = value.city ? String(value.city).trim() : null;
+    const normalizeNullable = (input) => {
+      const text = input ? String(input).trim() : '';
+      if (!text || text.toLowerCase() === 'null' || text.toLowerCase() === 'undefined') return null;
+      return text;
+    };
+    const name = normalizeNullable(value.name);
+    const city = normalizeNullable(value.city);
     const jobTypeRaw = value.job_type ? String(value.job_type).trim().toLowerCase() : '';
     const jobType = ['remote', 'local', 'part-time'].includes(jobTypeRaw) ? jobTypeRaw : null;
     const skills = Array.isArray(value.skills)

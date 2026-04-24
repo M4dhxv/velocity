@@ -30,6 +30,10 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true, profile });
   } catch (error) {
     console.error('profile_build_failed', error);
-    return res.status(500).json({ success: false, message: 'profile_build_failed' });
+    return res.status(500).json({ 
+      success: false, 
+      message: 'profile_build_failed',
+      detail: error?.message || 'unknown_error'
+    });
   }
 }
