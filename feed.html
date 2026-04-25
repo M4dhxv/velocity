@@ -400,7 +400,7 @@
         position: relative;
         overflow: visible;
       }
-      .onboarding-wrap::before { content: ''; position: absolute; width: 680px; height: 680px; background: radial-gradient(circle, rgba(0,0,0,.10) 0%, rgba(0,0,0,.03) 36%, rgba(0,0,0,0) 70%); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+      .onboarding-wrap::before { content: ''; position: absolute; width: 680px; height: 680px; background: radial-gradient(circle, rgba(102,51,153,.18) 0%, rgba(102,51,153,.06) 36%, rgba(102,51,153,0) 70%); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
       .onboarding-wrap > * { position: relative; z-index: 1; }
       .voice-title, .voice-subtitle, .voice-status, .voice-type-btn, .voice-processing { display: none !important; }
       .voice-live-transcript {
@@ -408,7 +408,7 @@
         max-width: 640px;
         margin: 0 auto 1rem;
         padding: .35rem .55rem;
-        color: rgba(0,0,0,.88);
+        color: rgba(69,39,116,.92);
         font-size: .96rem;
         font-weight: 600;
         letter-spacing: .01em;
@@ -445,14 +445,14 @@
         left: 50%;
         transform: translate(-50%, -50%);
         background: #fff;
-        filter: blur(10px) contrast(15);
+        filter: blur(10px) contrast(15) saturate(1.25);
         opacity: 0;
         pointer-events: none;
         z-index: 2;
         transition: opacity .2s ease;
       }
       .assistant-shell .processing-blob span {
-        background: #000;
+        background: rebeccapurple;
         position: absolute;
         border-radius: 50%;
         display: inline-block;
@@ -530,6 +530,9 @@
       .assistant-shell.listening { transform: scale(1.035); }
       .assistant-shell.processing { transform: scale(1.02); }
       .assistant-shell.speaking { transform: scale(1.045); }
+      .assistant-shell.speaking #voiceBubble {
+        filter: drop-shadow(0 0 24px rgba(102,51,153,.34));
+      }
       .assistant-shell.success { transform: scale(1.06); }
       #voice-wave-canvas {
         display: none;
@@ -538,9 +541,9 @@
       .voice-control-btn {
         width: 52px;
         height: 52px;
-        border: 1px solid rgba(38,142,95,.45);
-        background: rgba(6,40,27,.66);
-        color: #dfffee;
+        border: 1px solid rgba(102,51,153,.22);
+        background: rgba(102,51,153,.08);
+        color: rebeccapurple;
         border-radius: 50%;
         padding: 0;
         font-size: 0;
@@ -556,23 +559,23 @@
       }
       .voice-control-btn .material-symbols-outlined { font-size: 22px; }
       .voice-control-btn .label { display: none; }
-      .voice-control-btn:hover { transform: translateY(-1px); border-color: rgba(74,205,135,.72); }
+      .voice-control-btn:hover { transform: translateY(-1px); border-color: rgba(102,51,153,.45); }
       .voice-control-btn.primary {
         width: 70px;
         height: 70px;
         color: #ffffff;
         border: none;
-        background: linear-gradient(145deg, #4cff9f 0%, #22ca74 44%, #0f9a56 100%);
-        box-shadow: 0 14px 28px rgba(14,153,87,.38), inset 0 1px 0 rgba(255,255,255,.34);
+        background: linear-gradient(145deg, #9e6bff 0%, #7b49ff 44%, #5f2fca 100%);
+        box-shadow: 0 14px 28px rgba(102,51,153,.28), inset 0 1px 0 rgba(255,255,255,.34);
       }
       .voice-control-btn.primary .material-symbols-outlined { font-size: 30px; }
       .voice-control-btn.primary.listening {
-        background: linear-gradient(145deg, #81ffbe 0%, #3fe28f 50%, #14b768 100%);
+        background: linear-gradient(145deg, #c7a8ff 0%, #9e6bff 50%, #7b49ff 100%);
       }
       .voice-control-btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
       .voice-loader-row { margin-top: 1rem; display: none; justify-content: center; gap: 8px; align-items: center; min-height: 14px; }
       .voice-loader-row.visible { display: flex; }
-      .voice-loader-dot { width: 8px; height: 8px; border-radius: 50%; background: #66e7a6; animation: voice-bounce .9s infinite ease-in-out; }
+      .voice-loader-dot { width: 8px; height: 8px; border-radius: 50%; background: rebeccapurple; animation: voice-bounce .9s infinite ease-in-out; }
       .voice-loader-dot:nth-child(2) { animation-delay: .15s; }
       .voice-loader-dot:nth-child(3) { animation-delay: .3s; }
       @keyframes voice-bounce { 0%,80%,100% { transform: scale(.7); opacity: .5; } 40% { transform: scale(1); opacity: 1; } }
@@ -581,12 +584,12 @@
         width: 68px;
         height: 68px;
         border-radius: 50%;
-        border: 2px solid #8cdca9;
-        color: #16a34a;
+        border: 2px solid rgba(102,51,153,.28);
+        color: rebeccapurple;
         display: none;
         align-items: center;
         justify-content: center;
-        background: #f0fff6;
+        background: #fff;
         transform: scale(.88);
         animation: voice-pop .35s ease forwards;
         position: absolute;
@@ -768,6 +771,11 @@
       const shouldListen = mode === 'idle' || mode === 'listening';
       state.blob.setListeningState(shouldListen);
     }
+
+    if (state.blob?.setBubbleContext) {
+      const context = mode === 'speaking' ? 'urgencia' : mode === 'processing' ? 'instavel' : 'psicologia';
+      state.blob.setBubbleContext(context);
+    }
   }
 
   function updateVoiceControlUI() {
@@ -857,9 +865,9 @@
       u_time: { value: 0 },
       u_volume: { value: 0 },
       u_speed: { value: 1.0 },
-      u_colorCenter: { value: new THREE.Color('#000000') },
-      u_color1: { value: new THREE.Color('#161616') },
-      u_color2: { value: new THREE.Color('#3d3d3d') },
+      u_colorCenter: { value: new THREE.Color('#ffffff') },
+      u_color1: { value: new THREE.Color('#d4bcff') },
+      u_color2: { value: new THREE.Color('#9d6bff') },
       u_expanding: { value: 0 },
       u_isListening: { value: 1 },
     };
@@ -965,11 +973,11 @@
     };
 
     const contextColors = {
-      saude: { center: '#000000', color1: '#222222', color2: '#3d3d3d' },
-      psicologia: { center: '#000000', color1: '#262626', color2: '#444444' },
-      nutricao: { center: '#000000', color1: '#1f1f1f', color2: '#3a3a3a' },
-      instavel: { center: '#000000', color1: '#2c2c2c', color2: '#4a4a4a' },
-      urgencia: { center: '#000000', color1: '#2a2a2a', color2: '#484848' },
+      saude: { center: '#ffffff', color1: '#d7c3ff', color2: '#ad85ff' },
+      psicologia: { center: '#ffffff', color1: '#d0b5ff', color2: '#9f6bff' },
+      nutricao: { center: '#ffffff', color1: '#e0d1ff', color2: '#b98cff' },
+      instavel: { center: '#ffffff', color1: '#eadcff', color2: '#c29cff' },
+      urgencia: { center: '#ffffff', color1: '#c89dff', color2: '#7b49ff' },
     };
 
     const setBubbleContext = (context) => {
@@ -1309,9 +1317,11 @@
   async function speakConversationalResponse(text) {
     const phrase = String(text || '').trim();
     if (!phrase) return false;
+    if (state.blob?.setBubbleContext) state.blob.setBubbleContext('urgencia');
     setAssistantState('speaking');
     await wait(randomBetween(300, 500));
     const played = await speakViaApiTts(phrase);
+    if (state.blob?.setBubbleContext) state.blob.setBubbleContext('psicologia');
     if (!state.isRecording && !state.isProcessing) setAssistantState('idle');
     return played;
   }
