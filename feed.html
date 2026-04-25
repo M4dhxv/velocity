@@ -380,10 +380,12 @@
       .voice-app-shell {
         min-height: 100vh;
         width: 100%;
-        background: #000;
+        background:
+          radial-gradient(circle at top, rgba(63,255,139,.12) 0%, rgba(63,255,139,0) 34%),
+          linear-gradient(180deg, #f8fbff 0%, #eef3ff 100%);
       }
       .voice-screen { min-height: 100vh; width: 100%; display: flex; align-items: center; justify-content: center; }
-      #voice-onboarding-screen { background: #000; }
+      #voice-onboarding-screen { background: transparent; }
       .voice-hidden { display: none !important; }
       .voice-onboard-shell { width: min(1040px, 100%); min-height: 100vh; padding: .6rem; display: grid; place-items: center; }
       .onboarding-wrap {
@@ -406,7 +408,7 @@
         max-width: 640px;
         margin: 0 auto 1rem;
         padding: .35rem .55rem;
-        color: rgba(255,255,255,.92);
+        color: rgba(24,34,58,.9);
         font-size: .96rem;
         font-weight: 600;
         letter-spacing: .01em;
@@ -430,7 +432,7 @@
         position: absolute;
         inset: -48px;
         border-radius: 999px;
-        background: radial-gradient(circle, rgba(63,255,139,.52) 0%, rgba(63,255,139,.2) 30%, rgba(0,220,140,.14) 48%, rgba(63,255,139,0) 76%);
+        background: radial-gradient(circle, rgba(63,255,139,.56) 0%, rgba(63,255,139,.24) 28%, rgba(29,185,115,.16) 46%, rgba(63,255,139,0) 76%);
         filter: blur(3px);
         opacity: .95;
         transition: opacity .32s ease, transform .32s ease;
@@ -441,10 +443,10 @@
         height: 100%;
         border-radius: 44% 56% 54% 46% / 40% 60% 42% 58%;
         background:
-          radial-gradient(115% 120% at 18% 8%, rgba(231,255,244,.95) 0%, rgba(231,255,244,.18) 30%, rgba(231,255,244,0) 56%),
-          radial-gradient(84% 90% at 80% 76%, rgba(34,223,150,.9) 0%, rgba(13,175,116,.82) 34%, rgba(5,122,82,.72) 58%, rgba(7,58,43,.45) 78%, rgba(7,58,43,0) 100%),
-          radial-gradient(120% 100% at 52% 48%, rgba(1,41,29,.95) 20%, rgba(5,81,55,.96) 58%, rgba(11,143,92,.95) 84%, rgba(74,250,171,.9) 100%);
-        box-shadow: inset -20px -28px 34px rgba(5,95,65,.38), inset 18px 20px 28px rgba(224,255,240,.2), 0 28px 66px rgba(15,137,89,.34), 0 14px 40px rgba(4,22,16,.58);
+          radial-gradient(115% 120% at 18% 8%, rgba(236,255,244,.96) 0%, rgba(236,255,244,.16) 28%, rgba(236,255,244,0) 56%),
+          radial-gradient(84% 90% at 80% 76%, rgba(68,245,154,.92) 0%, rgba(28,205,122,.84) 34%, rgba(10,141,80,.74) 58%, rgba(6,72,42,.5) 78%, rgba(6,72,42,0) 100%),
+          radial-gradient(120% 100% at 52% 48%, rgba(1,28,18,.96) 20%, rgba(5,72,46,.97) 58%, rgba(12,150,93,.96) 84%, rgba(116,255,184,.92) 100%);
+        box-shadow: inset -20px -28px 34px rgba(3,88,57,.42), inset 18px 20px 28px rgba(228,255,238,.22), 0 28px 66px rgba(12,146,90,.34), 0 14px 40px rgba(4,22,16,.58);
         overflow: hidden;
       }
       .assistant-core::before,
@@ -456,12 +458,12 @@
       }
       .assistant-core::before {
         background:
-          conic-gradient(from 210deg at 63% 40%, rgba(128,255,188,0) 0deg, rgba(128,255,188,.34) 46deg, rgba(164,255,220,.44) 116deg, rgba(255,255,255,.05) 180deg, rgba(128,255,188,.28) 258deg, rgba(128,255,188,0) 360deg);
+          conic-gradient(from 210deg at 63% 40%, rgba(129,255,190,0) 0deg, rgba(129,255,190,.34) 46deg, rgba(186,255,220,.46) 116deg, rgba(255,255,255,.05) 180deg, rgba(129,255,190,.28) 258deg, rgba(129,255,190,0) 360deg);
         mix-blend-mode: screen;
       }
       .assistant-core::after {
         opacity: 0;
-        background: radial-gradient(90% 84% at 82% 34%, rgba(132,255,196,.6) 0%, rgba(132,255,196,.2) 34%, rgba(132,255,196,0) 62%);
+        background: radial-gradient(90% 84% at 82% 34%, rgba(146,255,203,.64) 0%, rgba(146,255,203,.22) 34%, rgba(146,255,203,0) 62%);
         transform: translateX(-10%) translateY(0);
       }
       .assistant-shell.idle .assistant-core { animation: assistant-breathe 3.2s ease-in-out infinite; }
