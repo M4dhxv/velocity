@@ -621,7 +621,136 @@
         50% { transform: scale(1.08); }
         100% { transform: scale(1); }
       }
-      .voice-results-wrap { width: min(1280px, 100%); margin: 0 auto; background: #f6f6ff; min-height: 100vh; padding: 2rem 1.2rem 2.6rem; }
+      .voice-results-wrap { width: min(1480px, 100%); margin: 0 auto; background: #f6f6ff; min-height: 100vh; padding: 2rem 1.2rem 2.6rem; }
+      .voice-results-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 360px;
+        gap: 1.2rem;
+        align-items: start;
+      }
+      .voice-results-main { min-width: 0; }
+      .voice-copilot-rail {
+        position: sticky;
+        top: 1rem;
+        min-height: calc(100vh - 2rem);
+        border-left: 1px solid rgba(165,173,198,.45);
+        padding: .6rem 1rem 1rem 1.1rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 1.2rem;
+      }
+      .rail-identity { display: flex; flex-direction: column; align-items: center; gap: .7rem; text-align: center; }
+      .rail-avatar {
+        width: 124px;
+        height: 124px;
+        border-radius: 999px;
+        overflow: hidden;
+        border: 1px solid #d9e2ff;
+        box-shadow: 0 6px 16px rgba(39,46,66,.08);
+      }
+      .rail-avatar img { width: 100%; height: 100%; object-fit: cover; }
+      .rail-name { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.32rem; font-weight: 700; color: #272e42; letter-spacing: -.02em; }
+      .rail-subtitle { font-size: .78rem; font-weight: 600; color: #6a7390; line-height: 1.45; max-width: 260px; }
+      .rail-skill-row { display: flex; align-items: center; gap: .42rem; flex-wrap: wrap; justify-content: center; margin-top: .2rem; }
+      .rail-skill { display: inline-flex; align-items: center; gap: .2rem; font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: rgba(83,91,113,.78); }
+      .rail-skill .material-symbols-outlined { font-size: 13px; }
+      .rail-dot { width: 3px; height: 3px; border-radius: 999px; background: rgba(83,91,113,.45); }
+      .rail-connect-row { display: flex; align-items: flex-start; justify-content: center; gap: .95rem; margin-top: .5rem; }
+      .rail-connect-item { display: flex; flex-direction: column; align-items: center; gap: .42rem; text-align: center; }
+      .rail-connect-btn {
+        width: 42px;
+        height: 42px;
+        border-radius: 999px;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform .16s ease, box-shadow .16s ease;
+      }
+      .rail-connect-btn .material-symbols-outlined { font-size: 19px; }
+      .rail-connect-btn.github {
+        background: linear-gradient(135deg, #2b2f38 0%, #151a22 100%);
+        color: #f8f9fd;
+        box-shadow: 0 8px 20px rgba(20,26,34,.34), 0 0 0 1px rgba(255,255,255,.06) inset;
+      }
+      .rail-connect-btn.linkedin {
+        background: linear-gradient(135deg, #4fa8ff 0%, #287be6 100%);
+        color: #ffffff;
+        box-shadow: 0 8px 20px rgba(40,123,230,.34), 0 0 0 1px rgba(255,255,255,.16) inset;
+      }
+      .rail-connect-btn:hover { transform: translateY(-1px); }
+      .rail-connect-label { font-size: .66rem; font-weight: 600; color: #6a7390; }
+      .rail-copilot-hero { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .62rem; flex: 1; }
+      .rail-micro-top { font-size: .62rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: rgba(83,91,113,.55); }
+      .voice-orb-minimal {
+        width: 156px;
+        height: 156px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .orb-minimal-ring-1 {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, rgba(63,255,139,.18) 0%, rgba(0,220,253,.18) 100%);
+        animation: rail-orb-organic-1 8s infinite alternate ease-in-out;
+        filter: blur(12px);
+      }
+      .orb-minimal-ring-2 {
+        position: absolute;
+        width: 82%;
+        height: 82%;
+        border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, rgba(0,106,51,.11) 0%, rgba(0,101,117,.11) 100%);
+        animation: rail-orb-organic-2 6.2s infinite alternate-reverse ease-in-out;
+        filter: blur(8px);
+      }
+      .orb-minimal-core {
+        position: relative;
+        width: 54px;
+        height: 54px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+        background: rgba(255,255,255,.58);
+        backdrop-filter: blur(8px);
+      }
+      .orb-minimal-core .material-symbols-outlined { color: #006a33; font-size: 31px; }
+      .rail-micro-bottom { font-size: .82rem; font-weight: 600; color: rgba(83,91,113,.77); }
+      .rail-prompts { display: flex; flex-direction: column; gap: .48rem; width: 100%; }
+      .rail-chip {
+        border: 1px solid rgba(111,118,142,.16);
+        background: rgba(255,255,255,.58);
+        color: rgba(83,91,113,.9);
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 600;
+        text-align: center;
+        padding: .54rem .76rem;
+        transition: all .18s ease;
+      }
+      .rail-chip:hover { border-color: rgba(0,106,51,.24); color: #006a33; background: rgba(255,255,255,.88); }
+      @keyframes rail-orb-organic-1 {
+        0% { transform: translate(-50%, -50%) scale(.92) rotate(0deg); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
+        100% { transform: translate(-50%, -50%) scale(1.08) rotate(180deg); border-radius: 70% 30% 50% 50% / 30% 50% 70% 50%; }
+      }
+      @keyframes rail-orb-organic-2 {
+        0% { transform: translate(-50%, -50%) scale(.86) rotate(0deg); border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+        100% { transform: translate(-50%, -50%) scale(1.04) rotate(-180deg); border-radius: 30% 70% 60% 40% / 50% 60% 30% 60%; }
+      }
       .voice-results-top { display: flex; align-items: center; justify-content: space-between; gap: .9rem; margin-bottom: .6rem; }
       .voice-results-top h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(1.8rem, 3.1vw, 2.5rem); font-weight: 800; letter-spacing: -.02em; color: #272e42; }
       .voice-logout-btn { border: 1px solid #d8deef; background: #fff; color: #5f6a86; border-radius: 999px; padding: .45rem .9rem; cursor: pointer; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; transition: all .2s; }
@@ -664,6 +793,8 @@
         .voice-results-wrap { padding: 1.1rem .85rem 1.8rem; }
         .voice-results-top { align-items: flex-start; flex-direction: column; }
         .voice-logout-btn { width: 100%; text-align: center; }
+        .voice-results-layout { grid-template-columns: 1fr; }
+        .voice-copilot-rail { display: none; }
         .voice-job-card { border-radius: 16px; padding: .85rem; flex-direction: column; }
         .voice-job-side { align-items: flex-start; width: 100%; }
         .voice-job-actions { width: 100%; }
@@ -743,14 +874,64 @@
       </section>
       <section id="voice-results-screen" class="voice-screen voice-hidden">
         <div class="voice-results-wrap">
-          <div class="voice-results-top">
-            <h2>Top matches for you</h2>
-            <button id="voice-logout-btn" class="voice-logout-btn" type="button">Log out</button>
+          <div class="voice-results-layout">
+            <div class="voice-results-main">
+              <div class="voice-results-top">
+                <h2>Top matches for you</h2>
+                <button id="voice-logout-btn" class="voice-logout-btn" type="button">Log out</button>
+              </div>
+              <p class="voice-transition">Using your profile preferences</p>
+              <div id="voice-profile-pills" class="voice-profile-pills"></div>
+              <div id="voice-resume-card" class="voice-resume-card"></div>
+              <div id="voice-jobs-list" class="voice-jobs-list"></div>
+            </div>
+
+            <aside class="voice-copilot-rail" aria-label="Copilot rail">
+              <div class="rail-identity">
+                <div class="rail-avatar">
+                  <img alt="Madhav Sharma" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUeUxQQjUS0iQoJdpQZ2wJ0B22NHY9uRBuNbMl_mtbd_8R0Leh_iSSswBoTkDWKHxa5br4NZ-ye32sRCBXeiBMkEIKIy7a3t0_sYZ7bIiUZyHB7uq-WadtkZ_CNVtfhq9OXysVgc0MIcMzPZ-WLHqIiwIhiCrnP0KdMEjzcSWgwmAKSmLspg-NmVYUttrW_aYEHfVoZ21IBDD5sCfRURhUHx2GspINRdMNM7y5u256lMHekvHhyUw2_crmJu5Ln_PR-elMbSF7ZrY"/>
+                </div>
+                <h3 class="rail-name">Madhav Sharma</h3>
+                <p class="rail-subtitle">Full-stack developer • AI systems • Content strategy</p>
+                <div class="rail-skill-row">
+                  <span class="rail-skill"><span class="material-symbols-outlined">code</span>React</span>
+                  <span class="rail-dot"></span>
+                  <span class="rail-skill"><span class="material-symbols-outlined">psychology</span>AI</span>
+                  <span class="rail-dot"></span>
+                  <span class="rail-skill"><span class="material-symbols-outlined">lightbulb</span>Strategy</span>
+                </div>
+                <div class="rail-connect-row">
+                  <div class="rail-connect-item">
+                    <button class="rail-connect-btn github" type="button" aria-label="Connect GitHub">
+                      <span class="material-symbols-outlined">code</span>
+                    </button>
+                    <span class="rail-connect-label">Connect GitHub</span>
+                  </div>
+                  <div class="rail-connect-item">
+                    <button class="rail-connect-btn linkedin" type="button" aria-label="Connect LinkedIn">
+                      <span class="material-symbols-outlined">work</span>
+                    </button>
+                    <span class="rail-connect-label">Connect LinkedIn</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rail-copilot-hero">
+                <p class="rail-micro-top">Hold to speak</p>
+                <div class="voice-orb-minimal" aria-hidden="true">
+                  <div class="orb-minimal-ring-1"></div>
+                  <div class="orb-minimal-ring-2"></div>
+                  <div class="orb-minimal-core"><span class="material-symbols-outlined">mic</span></div>
+                </div>
+                <p class="rail-micro-bottom">Ask Copilot anything</p>
+              </div>
+
+              <div class="rail-prompts">
+                <button class="rail-chip" type="button">Which contract fits my skills best?</button>
+                <button class="rail-chip" type="button">Draft a quick proposal for the café reel</button>
+              </div>
+            </aside>
           </div>
-          <p class="voice-transition">Using your profile preferences</p>
-          <div id="voice-profile-pills" class="voice-profile-pills"></div>
-          <div id="voice-resume-card" class="voice-resume-card"></div>
-          <div id="voice-jobs-list" class="voice-jobs-list"></div>
         </div>
       </section>
     `;
