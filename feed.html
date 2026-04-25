@@ -7,6 +7,7 @@
   <meta name="description" content="Tell us what you can do. We match you to gigs instantly."/>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+  <script src="https://unpkg.com/three@0.152.2/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -427,44 +428,13 @@
         place-items: center;
         transition: width .42s cubic-bezier(.4,0,.2,1), height .42s cubic-bezier(.4,0,.2,1), transform .42s cubic-bezier(.4,0,.2,1);
       }
-      .assistant-shell .blob {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: #fff;
-        filter: brightness(1) contrast(40);
-        overflow: hidden;
-        padding: 20px;
-        display: inline-block;
+      #voiceBubble {
+        width: 100%;
+        height: 100%;
+        display: block;
+        pointer-events: none;
+        opacity: 1;
         transition: opacity .2s ease;
-      }
-      .assistant-shell .blob > div {
-        filter: blur(18px);
-        display: inline-block;
-      }
-      .assistant-shell .blob > div > div,
-      .assistant-shell .blob > div > div::before,
-      .assistant-shell .blob > div > div::after {
-        width: 75px;
-        height: 75px;
-        margin: 2px;
-        position: relative;
-        background: #000;
-        display: inline-block;
-        animation: rotateAntiTrigo 3s linear infinite;
-      }
-      .assistant-shell .blob > div > div::before {
-        content: '';
-        position: absolute;
-        margin: 3px;
-        animation: rotateTrigo 2.5s linear infinite;
-      }
-      .assistant-shell .blob > div > div::after {
-        content: '';
-        position: absolute;
-        margin: 1px;
-        animation: rotateTrigo 2.8s linear infinite;
       }
       .assistant-shell .processing-blob {
         --size: 250px;
@@ -512,7 +482,7 @@
         margin: calc(var(--size) / -8);
         animation: proc-skewing 2s 1.5s ease-in-out infinite;
       }
-      .assistant-shell.processing .blob {
+      .assistant-shell.processing #voiceBubble {
         opacity: 0;
       }
       .assistant-shell.processing .processing-blob {
@@ -729,11 +699,7 @@
             <div id="voice-live-transcript" class="voice-live-transcript">Your live transcript will appear here while you speak.</div>
 
             <div id="voice-assistant-shell" class="assistant-shell idle" aria-live="polite">
-              <div class="blob" aria-hidden="true">
-                <div>
-                  <div></div>
-                </div>
-              </div>
+              <canvas id="voiceBubble" aria-hidden="true"></canvas>
               <div class="processing-blob" aria-hidden="true">
                 <p><span></span></p>
                 <p><span></span></p>
@@ -797,6 +763,11 @@
     states.forEach((s) => shell.classList.remove(s));
     shell.classList.add(mode);
     state.assistantMode = mode;
+
+    if (state.blob?.setListeningState) {
+      const shouldListen = mode === 'idle' || mode === 'listening';
+      state.blob.setListeningState(shouldListen);
+    }
   }
 
   function updateVoiceControlUI() {
@@ -869,208 +840,198 @@
     }
   }
 
-  function circleTexture({ resolution = 64, radius = 32, color = '#ffffff' } = {}) {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.height = resolution;
-    canvas.width = resolution;
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(resolution / 2, resolution / 2, radius, 0, Math.PI * 2);
-    ctx.fill();
-    return canvas;
-  }
-
-  function initExactBlob() {
-    const containerEl = $('voice-blob-container');
-    if (!containerEl || !window.THREE || state.blob) return;
-
-    const fragmentShader = `
-      varying vec2 vUv;
-      varying float noise;
-      varying vec3 pos;
-      uniform float time;
-      uniform sampler2D texture;
-
-      void main() {
-        float r = 0.35 - 1.25 * noise;
-        float g = 1.05 - 1.65 * noise;
-        float b = 0.28 - 0.95 * noise;
-        vec3 foo = vec3(r, g, b);
-        gl_FragColor = vec4(foo, 1.0) * texture2D(texture, gl_PointCoord);
-        if (gl_FragColor.a < ALPHATEST) discard;
-      }
-    `;
-
-    const vertexShader = `
-      vec3 mod289_1_0(vec3 x){ return x - floor(x * (1.0 / 289.0)) * 289.0; }
-      vec4 mod289_1_0(vec4 x){ return x - floor(x * (1.0 / 289.0)) * 289.0; }
-      vec4 permute_1_1(vec4 x){ return mod289_1_0(((x*34.0)+1.0)*x); }
-      vec4 taylorInvSqrt_1_2(vec4 r){ return 1.79284291400159 - 0.85373472095314 * r; }
-      vec3 fade_1_3(vec3 t) { return t*t*t*(t*(t*6.0-15.0)+10.0); }
-
-      float pnoise_1_4(vec3 P, vec3 rep) {
-        vec3 Pi0 = mod(floor(P), rep);
-        vec3 Pi1 = mod(Pi0 + vec3(1.0), rep);
-        Pi0 = mod289_1_0(Pi0);
-        Pi1 = mod289_1_0(Pi1);
-        vec3 Pf0 = fract(P);
-        vec3 Pf1 = Pf0 - vec3(1.0);
-        vec4 ix = vec4(Pi0.x, Pi1.x, Pi0.x, Pi1.x);
-        vec4 iy = vec4(Pi0.yy, Pi1.yy);
-        vec4 iz0 = Pi0.zzzz;
-        vec4 iz1 = Pi1.zzzz;
-        vec4 ixy = permute_1_1(permute_1_1(ix) + iy);
-        vec4 ixy0 = permute_1_1(ixy + iz0);
-        vec4 ixy1 = permute_1_1(ixy + iz1);
-
-        vec4 gx0 = ixy0 * (1.0 / 7.0);
-        vec4 gy0 = fract(floor(gx0) * (1.0 / 7.0)) - 0.5;
-        gx0 = fract(gx0);
-        vec4 gz0 = vec4(0.5) - abs(gx0) - abs(gy0);
-        vec4 sz0 = step(gz0, vec4(0.0));
-        gx0 -= sz0 * (step(0.0, gx0) - 0.5);
-        gy0 -= sz0 * (step(0.0, gy0) - 0.5);
-
-        vec4 gx1 = ixy1 * (1.0 / 7.0);
-        vec4 gy1 = fract(floor(gx1) * (1.0 / 7.0)) - 0.5;
-        gx1 = fract(gx1);
-        vec4 gz1 = vec4(0.5) - abs(gx1) - abs(gy1);
-        vec4 sz1 = step(gz1, vec4(0.0));
-        gx1 -= sz1 * (step(0.0, gx1) - 0.5);
-        gy1 -= sz1 * (step(0.0, gy1) - 0.5);
-
-        vec3 g000 = vec3(gx0.x,gy0.x,gz0.x);
-        vec3 g100 = vec3(gx0.y,gy0.y,gz0.y);
-        vec3 g010 = vec3(gx0.z,gy0.z,gz0.z);
-        vec3 g110 = vec3(gx0.w,gy0.w,gz0.w);
-        vec3 g001 = vec3(gx1.x,gy1.x,gz1.x);
-        vec3 g101 = vec3(gx1.y,gy1.y,gz1.y);
-        vec3 g011 = vec3(gx1.z,gy1.z,gz1.z);
-        vec3 g111 = vec3(gx1.w,gy1.w,gz1.w);
-
-        vec4 norm0 = taylorInvSqrt_1_2(vec4(dot(g000, g000), dot(g010, g010), dot(g100, g100), dot(g110, g110)));
-        g000 *= norm0.x; g010 *= norm0.y; g100 *= norm0.z; g110 *= norm0.w;
-        vec4 norm1 = taylorInvSqrt_1_2(vec4(dot(g001, g001), dot(g011, g011), dot(g101, g101), dot(g111, g111)));
-        g001 *= norm1.x; g011 *= norm1.y; g101 *= norm1.z; g111 *= norm1.w;
-
-        float n000 = dot(g000, Pf0);
-        float n100 = dot(g100, vec3(Pf1.x, Pf0.yz));
-        float n010 = dot(g010, vec3(Pf0.x, Pf1.y, Pf0.z));
-        float n110 = dot(g110, vec3(Pf1.xy, Pf0.z));
-        float n001 = dot(g001, vec3(Pf0.xy, Pf1.z));
-        float n101 = dot(g101, vec3(Pf1.x, Pf0.y, Pf1.z));
-        float n011 = dot(g011, vec3(Pf0.x, Pf1.yz));
-        float n111 = dot(g111, Pf1);
-
-        vec3 fade_xyz = fade_1_3(Pf0);
-        vec4 n_z = mix(vec4(n000, n100, n010, n110), vec4(n001, n101, n011, n111), fade_xyz.z);
-        vec2 n_yz = mix(n_z.xy, n_z.zw, fade_xyz.y);
-        float n_xyz = mix(n_yz.x, n_yz.y, fade_xyz.x);
-        return 2.2 * n_xyz;
-      }
-
-      uniform float time;
-      varying vec2 vUv;
-      varying vec3 pos;
-      varying float noise;
-      attribute float size;
-      float fac = 10.0;
-
-      float turbulence(vec3 p) {
-        float t = -.5;
-        for (float f = 1.0; f <= 1.0; f++) {
-          float power = pow(2.0, f);
-          t += abs(pnoise_1_4(vec3(power * p), vec3(fac, fac, fac)) / power);
-        }
-        return t;
-      }
-
-      void main() {
-        vUv = uv * 200.0;
-        noise = 10.0 * -.10 * turbulence(.5 * normalize(position) + time);
-        float b = 5.0 * pnoise_1_4(0.05 * position, vec3(100.0));
-        float displacement = (-10. * noise) + b;
-        vec3 newPosition = position + (normalize(position) * displacement);
-        pos = newPosition;
-        vec4 mvPosition = modelViewMatrix * vec4(newPosition, 1.0);
-        gl_PointSize = size * (300. / -mvPosition.z);
-        gl_Position = projectionMatrix * mvPosition;
-      }
-    `;
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    const w = containerEl.clientWidth || 320;
-    const h = containerEl.clientHeight || 320;
-    renderer.setSize(w, h);
-    renderer.setPixelRatio(window.devicePixelRatio || 1);
-    containerEl.innerHTML = '';
-    containerEl.appendChild(renderer.domElement);
+  function initVoiceBubble() {
+    const canvas = $('voiceBubble');
+    const shell = $('voice-assistant-shell');
+    const THREE = window.THREE;
+    if (!canvas || !shell || !THREE || state.blob) return;
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, w / h, 1, 10000);
-    camera.position.set(80, 0, 0);
-    camera.lookAt(scene.position);
-    scene.add(camera);
+    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 100);
+    camera.position.z = 2.2;
 
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.rotateSpeed = 0.5;
-    controls.dampingFactor = 0.25;
-    controls.enableZoom = false;
-    controls.enablePan = false;
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio || 1);
 
-    const PARTICLE_SIZE = 1;
-    const geo = new THREE.IcosahedronGeometry(20, 5);
-    const vertices = geo.vertices || [];
-    const positions = new Float32Array(vertices.length * 3);
-    const sizes = new Float32Array(vertices.length);
-    vertices.forEach((vert, i) => {
-      vert.toArray(positions, i * 3);
-      sizes[i] = PARTICLE_SIZE;
-    });
-
-    const bufferGeo = new THREE.BufferGeometry();
-    bufferGeo.addAttribute('position', new THREE.BufferAttribute(positions, 3));
-    bufferGeo.addAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    const uniforms = {
+      u_time: { value: 0 },
+      u_volume: { value: 0 },
+      u_speed: { value: 1.0 },
+      u_colorCenter: { value: new THREE.Color('#000000') },
+      u_color1: { value: new THREE.Color('#161616') },
+      u_color2: { value: new THREE.Color('#3d3d3d') },
+      u_expanding: { value: 0 },
+      u_isListening: { value: 1 },
+    };
 
     const material = new THREE.ShaderMaterial({
-      uniforms: {
-        time: { value: 0.0 },
-        texture: { value: new THREE.CanvasTexture(circleTexture({ resolution: 64, radius: 32, color: '#ffffff' })) },
-        resolution: { value: new THREE.Vector2() },
-      },
-      fragmentShader,
-      vertexShader,
+      uniforms,
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        precision highp float;
+        uniform float u_time;
+        uniform float u_volume;
+        uniform float u_speed;
+        uniform float u_expanding;
+        uniform float u_isListening;
+        uniform vec3 u_colorCenter;
+        uniform vec3 u_color1;
+        uniform vec3 u_color2;
+        varying vec2 vUv;
+
+        float random(vec2 st) {
+          return fract(sin(dot(st, vec2(12.9898,78.233))) * 43758.5453123);
+        }
+        float noise(vec2 st) {
+          vec2 i = floor(st);
+          vec2 f = fract(st);
+          float a = random(i), b = random(i + vec2(1.0,0.0));
+          float c = random(i + vec2(0.0,1.0)), d = random(i + vec2(1.0,1.0));
+          vec2 u = f*f*(3.0-2.0*f);
+          return mix(a,b,u.x) + (c - a)*u.y*(1.0 - u.x) + (d - b)*u.x*u.y;
+        }
+
+        void main() {
+          vec2 uv = vUv - 0.5;
+          float dist = length(uv);
+
+          float baseR = 0.35;
+          float pulse = sin(u_time * 1.2) * 0.008;
+          float normalR = baseR + pulse + (u_volume * 0.5 * u_isListening);
+          float initR = baseR * 0.2;
+          float expF = clamp(1.0 - u_expanding, 0.0, 1.0);
+          float radius = mix(initR, normalR, expF);
+
+          if (dist > radius) discard;
+
+          float tRad = smoothstep(0.0, radius, dist);
+          vec3 color = mix(u_colorCenter, u_color1, tRad);
+
+          float angle = u_time * 0.3 * u_speed;
+          vec2 swirl = uv * 6.0 + vec2(cos(angle), sin(angle)) * 3.0;
+          float n = noise(swirl + u_time * 0.2 * u_speed);
+          float edgeMix = smoothstep(radius * 0.4, radius, dist);
+          color = mix(color, u_color2, n * edgeMix);
+
+          gl_FragColor = vec4(color, 1.0);
+        }
+      `,
       transparent: true,
-      alphaTest: 0.9,
     });
 
-    material.uniforms.texture.value.wrapS = THREE.RepeatWrapping;
-    material.uniforms.texture.value.wrapT = THREE.RepeatWrapping;
+    const geometry = new THREE.PlaneGeometry(2, 2, 64, 64);
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
 
-    const sphere = new THREE.Points(bufferGeo, material);
-    sphere.rotation.set(0, Math.PI, 0);
-    scene.add(sphere);
+    const bubble = {
+      scene,
+      camera,
+      renderer,
+      uniforms,
+      targetVolume: 0,
+      smoothVolume: 0,
+      isListening: true,
+      raf: null,
+      stopVolumeLoop: null,
+    };
 
-    const onResize = () => {
-      const ww = containerEl.clientWidth || 320;
-      const hh = containerEl.clientHeight || 320;
-      renderer.setSize(ww, hh);
-      camera.aspect = ww / hh;
+    const setSize = () => {
+      const w = Math.max(1, shell.clientWidth || 300);
+      const h = Math.max(1, shell.clientHeight || 300);
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
       camera.updateProjectionMatrix();
     };
 
-    const renderLoop = () => {
-      controls.update();
-      material.uniforms.time.value += 0.0025;
+    const animate = (now) => {
+      bubble.uniforms.u_time.value = now * 0.001;
+      bubble.smoothVolume += (bubble.targetVolume - bubble.smoothVolume) * 0.15;
+      bubble.uniforms.u_volume.value = bubble.smoothVolume;
       renderer.render(scene, camera);
-      state.blob.raf = requestAnimationFrame(renderLoop);
+      bubble.raf = requestAnimationFrame(animate);
     };
 
-    state.blob = { renderer, scene, camera, controls, material, sphere, onResize, raf: null };
-    window.addEventListener('resize', onResize);
-    renderLoop();
+    const setListeningState = (listen) => {
+      bubble.isListening = !!listen;
+      bubble.uniforms.u_isListening.value = bubble.isListening ? 1 : 0;
+      bubble.uniforms.u_speed.value = bubble.isListening ? 1.0 : 2.0;
+      if (!bubble.isListening) bubble.targetVolume = 0;
+    };
+
+    const contextColors = {
+      saude: { center: '#000000', color1: '#222222', color2: '#3d3d3d' },
+      psicologia: { center: '#000000', color1: '#262626', color2: '#444444' },
+      nutricao: { center: '#000000', color1: '#1f1f1f', color2: '#3a3a3a' },
+      instavel: { center: '#000000', color1: '#2c2c2c', color2: '#4a4a4a' },
+      urgencia: { center: '#000000', color1: '#2a2a2a', color2: '#484848' },
+    };
+
+    const setBubbleContext = (context) => {
+      const ctx = contextColors[context];
+      if (!ctx) return;
+      bubble.uniforms.u_colorCenter.value.set(ctx.center);
+      bubble.uniforms.u_color1.value.set(ctx.color1);
+      bubble.uniforms.u_color2.value.set(ctx.color2);
+    };
+
+    const triggerBubbleExpand = () => {
+      bubble.uniforms.u_expanding.value = 1.0;
+      const start = performance.now();
+      const expand = (now) => {
+        const t = (now - start) / 1000;
+        bubble.uniforms.u_expanding.value = Math.max(1 - t, 0);
+        if (t < 1) requestAnimationFrame(expand);
+      };
+      requestAnimationFrame(expand);
+    };
+
+    const startVolumeLoop = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const audioCtx = new AudioContext();
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        const source = audioCtx.createMediaStreamSource(stream);
+        source.connect(analyser);
+        const data = new Uint8Array(analyser.fftSize);
+
+        let stopped = false;
+        bubble.stopVolumeLoop = () => { stopped = true; };
+
+        const updateVolume = () => {
+          if (stopped) return;
+          analyser.getByteTimeDomainData(data);
+          if (bubble.isListening) {
+            let sum = 0;
+            for (let i = 0; i < data.length; i += 1) sum += Math.abs(data[i] - 128);
+            const rawVol = sum / data.length / 128;
+            bubble.targetVolume = Math.min(0.8, rawVol * 0.8);
+          }
+          requestAnimationFrame(updateVolume);
+        };
+        updateVolume();
+      } catch (err) {
+        console.warn('voiceBubble microphone access failed', err);
+      }
+    };
+
+    setSize();
+    window.addEventListener('resize', setSize);
+    requestAnimationFrame(animate);
+    startVolumeLoop();
+    triggerBubbleExpand();
+
+    window.setBubbleContext = setBubbleContext;
+    window.setListeningState = setListeningState;
+    window.triggerBubbleExpand = triggerBubbleExpand;
+
+    state.blob = { ...bubble, setListeningState, setBubbleContext, triggerBubbleExpand, setSize };
   }
 
   function setStatus(text, tone = 'default') {
@@ -1945,6 +1906,7 @@
   hideLegacyFeedUI();
   injectOnboardingStyles();
   injectOnboardingUI();
+  initVoiceBubble();
   createWaveBars();
   updateWaveBars(Array.from({ length: 28 }, () => 3));
   updateVoiceControlUI();
