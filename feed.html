@@ -7,8 +7,6 @@
   <meta name="description" content="Tell us what you can do. We match you to gigs instantly."/>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r110/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.110.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -383,12 +381,10 @@
       .voice-app-shell {
         min-height: 100vh;
         width: 100%;
-        background:
-          radial-gradient(circle at top, rgba(63,255,139,.12) 0%, rgba(63,255,139,0) 34%),
-          linear-gradient(180deg, #f8fbff 0%, #eef3ff 100%);
+        background: #000;
       }
       .voice-screen { min-height: 100vh; width: 100%; display: flex; align-items: center; justify-content: center; }
-      #voice-onboarding-screen { background: transparent; }
+      #voice-onboarding-screen { background: #000; }
       .voice-hidden { display: none !important; }
       .voice-onboard-shell { width: min(1040px, 100%); min-height: 100vh; padding: .6rem; display: grid; place-items: center; }
       .onboarding-wrap {
@@ -403,7 +399,7 @@
         position: relative;
         overflow: visible;
       }
-      .onboarding-wrap::before { content: ''; position: absolute; width: 680px; height: 680px; background: radial-gradient(circle, rgba(63,255,139,.24) 0%, rgba(63,255,139,.08) 36%, rgba(63,255,139,0) 70%); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+      .onboarding-wrap::before { content: ''; position: absolute; width: 680px; height: 680px; background: radial-gradient(circle, rgba(255,255,255,.08) 0%, rgba(255,255,255,.02) 36%, rgba(255,255,255,0) 70%); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
       .onboarding-wrap > * { position: relative; z-index: 1; }
       .voice-title, .voice-subtitle, .voice-status, .voice-type-btn, .voice-processing { display: none !important; }
       .voice-live-transcript {
@@ -411,7 +407,7 @@
         max-width: 640px;
         margin: 0 auto 1rem;
         padding: .35rem .55rem;
-        color: rgba(24,34,58,.9);
+        color: rgba(255,255,255,.95);
         font-size: .96rem;
         font-weight: 600;
         letter-spacing: .01em;
@@ -421,8 +417,8 @@
         border: none;
       }
       .assistant-shell {
-        --assist-w: 340px;
-        --assist-h: 340px;
+        --assist-w: 290px;
+        --assist-h: 290px;
         width: var(--assist-w);
         height: var(--assist-h);
         margin: 0 auto;
@@ -431,23 +427,48 @@
         place-items: center;
         transition: width .42s cubic-bezier(.4,0,.2,1), height .42s cubic-bezier(.4,0,.2,1), transform .42s cubic-bezier(.4,0,.2,1);
       }
-      .assistant-shell .container {
+      .assistant-shell .blob {
         width: 100%;
         height: 100%;
-        position: relative;
-        border-radius: 999px;
+        background: #000;
+        filter: brightness(1) contrast(40);
         overflow: hidden;
-        filter: drop-shadow(0 24px 42px rgba(8, 63, 36, 0.32));
+        padding: 20px;
         transition: opacity .2s ease;
       }
-      .assistant-shell .container canvas {
-        position: absolute;
-        inset: 0;
-        width: 100% !important;
-        height: 100% !important;
-        background: #0f0e47;
+      .assistant-shell .blob > div {
+        width: 100%;
+        height: 100%;
+        filter: blur(18px);
+        display: flex;
+        flex-wrap: wrap;
+        align-content: center;
+        justify-content: center;
       }
-      .voice-processing-wrapper {
+      .assistant-shell .blob > div > div,
+      .assistant-shell .blob > div > div::before,
+      .assistant-shell .blob > div > div::after {
+        width: 75px;
+        height: 75px;
+        margin: 2px;
+        position: relative;
+        background: #fff;
+        display: inline-block;
+        animation: rotateAntiTrigo 3s linear infinite;
+      }
+      .assistant-shell .blob > div > div::before {
+        content: '';
+        position: absolute;
+        margin: 3px;
+        animation: rotateTrigo 2.5s linear infinite;
+      }
+      .assistant-shell .blob > div > div::after {
+        content: '';
+        position: absolute;
+        margin: 1px;
+        animation: rotateTrigo 2.8s linear infinite;
+      }
+      .assistant-shell .processing-blob {
         --size: 250px;
         position: absolute;
         width: var(--size);
@@ -462,46 +483,50 @@
         z-index: 2;
         transition: opacity .2s ease;
       }
-      .voice-processing-wrapper span {
+      .assistant-shell .processing-blob span {
         background: #000;
         position: absolute;
         border-radius: 50%;
         display: inline-block;
       }
-      .voice-processing-wrapper p {
+      .assistant-shell .processing-blob p {
         position: absolute;
         top: 50%;
         left: 50%;
       }
-      .voice-processing-wrapper p:nth-child(1) {
-        position: absolute;
-        animation: voice-proc-skewing-child .2s ease-in-out infinite alternate;
+      .assistant-shell .processing-blob p:nth-child(1) {
+        animation: proc-skewing-child .2s ease-in-out infinite alternate;
       }
-      .voice-processing-wrapper p:nth-child(1) span {
+      .assistant-shell .processing-blob p:nth-child(1) span {
         width: calc(var(--size) / 10);
         height: calc(var(--size) / 10);
         margin: calc(var(--size) / -20);
-        animation: voice-proc-moving 2s cubic-bezier(.97,.01,.12,.99) infinite alternate;
+        animation: proc-moving 2s cubic-bezier(.97,.01,.12,.99) infinite alternate;
       }
-      .voice-processing-wrapper p:nth-child(2) {
-        position: absolute;
-        animation: voice-proc-squishing 1s ease-in-out infinite alternate;
+      .assistant-shell .processing-blob p:nth-child(2) {
+        animation: proc-squishing 1s ease-in-out infinite alternate;
       }
-      .voice-processing-wrapper p:nth-child(2) span {
+      .assistant-shell .processing-blob p:nth-child(2) span {
         width: calc(var(--size) / 4);
         height: calc(var(--size) / 4);
         top: 50%;
         left: 50%;
         margin: calc(var(--size) / -8);
-        animation: voice-proc-skewing 2s 1.5s ease-in-out infinite;
+        animation: proc-skewing 2s 1.5s ease-in-out infinite;
       }
-      .assistant-shell.processing .container {
+      .assistant-shell.processing .blob {
         opacity: 0;
       }
-      .assistant-shell.processing .voice-processing-wrapper {
+      .assistant-shell.processing .processing-blob {
         opacity: 1;
       }
-      @keyframes voice-proc-skewing {
+      @keyframes rotateTrigo {
+        to { transform: rotate(360deg); }
+      }
+      @keyframes rotateAntiTrigo {
+        to { transform: rotate(-360deg); }
+      }
+      @keyframes proc-skewing {
         0% { transform: skewX(6deg); }
         10% { transform: skewX(-6deg); }
         20% { transform: skewX(4deg); }
@@ -519,17 +544,17 @@
         95% { transform: skewX(2deg); }
         100% { transform: skewX(1deg); }
       }
-      @keyframes voice-proc-skewing-child {
+      @keyframes proc-skewing-child {
         0% { transform: skewX(-10deg); }
         100% { transform: skewX(10deg); }
       }
-      @keyframes voice-proc-moving {
+      @keyframes proc-moving {
         0% { transform: translate(calc(var(--size) / -2.5)); }
         30% { transform: translate(calc(var(--size) / -10)); }
         70% { transform: translate(calc(var(--size) / 10)); }
         100% { transform: translate(calc(var(--size) / 2.5)); }
       }
-      @keyframes voice-proc-squishing {
+      @keyframes proc-squishing {
         10%, 40%, 80% { transform: scale(1, .9); }
         0%, 30%, 60%, 100% { transform: scale(.9, 1); }
       }
@@ -662,8 +687,8 @@
       @keyframes tag-in { to { opacity: 1; transform: translateY(0); } }
       @media (max-width: 820px) {
         .voice-onboard-shell { padding: .75rem .65rem; }
-        .assistant-shell { --assist-w: 300px; --assist-h: 300px; }
-        .voice-processing-wrapper { --size: 210px; }
+        .assistant-shell { --assist-w: 260px; --assist-h: 260px; }
+        .assistant-shell .processing-blob { --size: 210px; }
         .voice-controls { gap: .45rem; }
         .voice-results-wrap { padding: 1.1rem .85rem 1.8rem; }
         .voice-results-top { align-items: flex-start; flex-direction: column; }
@@ -674,8 +699,8 @@
         .voice-job-grab, .voice-job-save { flex: 1; text-align: center; }
       }
       @media (max-width: 520px) {
-        .assistant-shell { --assist-w: 250px; --assist-h: 250px; }
-        .voice-processing-wrapper { --size: 180px; }
+        .assistant-shell { --assist-w: 230px; --assist-h: 230px; }
+        .assistant-shell .processing-blob { --size: 180px; }
         .voice-pill { font-size: .7rem; padding: .46rem .66rem; }
         .voice-resume-actions { flex-direction: column; }
         .voice-resume-btn { width: 100%; }
@@ -706,8 +731,15 @@
             <div id="voice-live-transcript" class="voice-live-transcript">Your live transcript will appear here while you speak.</div>
 
             <div id="voice-assistant-shell" class="assistant-shell idle" aria-live="polite">
-              <div id="voice-blob-container" class="container"></div>
-              <div class="voice-processing-wrapper" aria-hidden="true">
+              <div class="blob" aria-hidden="true">
+                <div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                </div>
+              </div>
+              <div class="processing-blob" aria-hidden="true">
                 <p><span></span></p>
                 <p><span></span></p>
               </div>
@@ -1918,7 +1950,6 @@
   hideLegacyFeedUI();
   injectOnboardingStyles();
   injectOnboardingUI();
-  initExactBlob();
   createWaveBars();
   updateWaveBars(Array.from({ length: 28 }, () => 3));
   updateVoiceControlUI();
