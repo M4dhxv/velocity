@@ -365,6 +365,15 @@
     assistantMode: 'idle',
     conversation: { step: 'name', name: null, city: null, job_type: null, skills: [] },
     conversationTurns: [],
+    copilotInsight: '',
+    suggestedPrompts: [],
+    socialConnections: {
+      github: { connected: false, url: '' },
+      linkedin: { connected: false, url: '' },
+    },
+    activeSkillFilter: '',
+    railHoldActive: false,
+    railHoldEndedAt: 0,
   };
   let onboardingComplete = false;
 
@@ -655,6 +664,18 @@
       .rail-skill-row { display: flex; align-items: center; gap: .42rem; flex-wrap: wrap; justify-content: center; margin-top: .2rem; }
       .rail-skill { display: inline-flex; align-items: center; gap: .2rem; font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: rgba(83,91,113,.78); }
       .rail-skill .material-symbols-outlined { font-size: 13px; }
+      .rail-skill-btn {
+        border: none;
+        background: transparent;
+        border-radius: 999px;
+        padding: .2rem .32rem;
+        cursor: pointer;
+      }
+      .rail-skill-btn:hover,
+      .rail-skill-btn.active {
+        background: rgba(0,106,51,.1);
+        color: #006a33;
+      }
       .rail-dot { width: 3px; height: 3px; border-radius: 999px; background: rgba(83,91,113,.45); }
       .rail-connect-row { display: flex; align-items: flex-start; justify-content: center; gap: .95rem; margin-top: .5rem; }
       .rail-connect-item { display: flex; flex-direction: column; align-items: center; gap: .42rem; text-align: center; }
@@ -681,6 +702,9 @@
         box-shadow: 0 8px 20px rgba(40,123,230,.34), 0 0 0 1px rgba(255,255,255,.16) inset;
       }
       .rail-connect-btn:hover { transform: translateY(-1px); }
+      .rail-connect-btn.connected {
+        box-shadow: 0 0 0 2px rgba(63,255,139,.6), 0 8px 20px rgba(39,46,66,.24);
+      }
       .rail-connect-label { font-size: .66rem; font-weight: 600; color: #6a7390; }
       .rail-copilot-hero { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .62rem; flex: 1; }
       .rail-micro-top { font-size: .62rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: rgba(83,91,113,.55); }
@@ -691,6 +715,10 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        border: none;
+        background: transparent;
+        padding: 0;
+        cursor: pointer;
       }
       .orb-minimal-ring-1 {
         position: absolute;
@@ -729,6 +757,12 @@
         backdrop-filter: blur(8px);
       }
       .orb-minimal-core .material-symbols-outlined { color: #006a33; font-size: 31px; }
+      .voice-orb-minimal.is-listening { transform: scale(1.03); }
+      .voice-orb-minimal.is-processing .orb-minimal-ring-1,
+      .voice-orb-minimal.is-processing .orb-minimal-ring-2 { animation-duration: 2s; }
+      .voice-orb-minimal.is-speaking .orb-minimal-core {
+        box-shadow: 0 0 0 8px rgba(63,255,139,.17), 0 0 0 16px rgba(0,220,253,.1);
+      }
       .rail-micro-bottom { font-size: .82rem; font-weight: 600; color: rgba(83,91,113,.77); }
       .rail-prompts { display: flex; flex-direction: column; gap: .48rem; width: 100%; }
       .rail-chip {
@@ -741,6 +775,7 @@
         text-align: center;
         padding: .54rem .76rem;
         transition: all .18s ease;
+        cursor: pointer;
       }
       .rail-chip:hover { border-color: rgba(0,106,51,.24); color: #006a33; background: rgba(255,255,255,.88); }
       @keyframes rail-orb-organic-1 {
@@ -889,47 +924,38 @@
             <aside class="voice-copilot-rail" aria-label="Copilot rail">
               <div class="rail-identity">
                 <div class="rail-avatar">
-                  <img alt="Madhav Sharma" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUeUxQQjUS0iQoJdpQZ2wJ0B22NHY9uRBuNbMl_mtbd_8R0Leh_iSSswBoTkDWKHxa5br4NZ-ye32sRCBXeiBMkEIKIy7a3t0_sYZ7bIiUZyHB7uq-WadtkZ_CNVtfhq9OXysVgc0MIcMzPZ-WLHqIiwIhiCrnP0KdMEjzcSWgwmAKSmLspg-NmVYUttrW_aYEHfVoZ21IBDD5sCfRURhUHx2GspINRdMNM7y5u256lMHekvHhyUw2_crmJu5Ln_PR-elMbSF7ZrY"/>
+                  <img id="rail-avatar-img" alt="Profile avatar" src=""/>
                 </div>
-                <h3 class="rail-name">Madhav Sharma</h3>
-                <p class="rail-subtitle">Full-stack developer • AI systems • Content strategy</p>
-                <div class="rail-skill-row">
-                  <span class="rail-skill"><span class="material-symbols-outlined">code</span>React</span>
-                  <span class="rail-dot"></span>
-                  <span class="rail-skill"><span class="material-symbols-outlined">psychology</span>AI</span>
-                  <span class="rail-dot"></span>
-                  <span class="rail-skill"><span class="material-symbols-outlined">lightbulb</span>Strategy</span>
-                </div>
+                <h3 id="rail-name" class="rail-name">Loading...</h3>
+                <p id="rail-subtitle" class="rail-subtitle">Building profile insight...</p>
+                <div id="rail-skill-row" class="rail-skill-row"></div>
                 <div class="rail-connect-row">
                   <div class="rail-connect-item">
-                    <button class="rail-connect-btn github" type="button" aria-label="Connect GitHub">
+                    <button id="rail-connect-github" class="rail-connect-btn github" type="button" aria-label="Connect GitHub">
                       <span class="material-symbols-outlined">code</span>
                     </button>
-                    <span class="rail-connect-label">Connect GitHub</span>
+                    <span id="rail-connect-github-label" class="rail-connect-label">Connect GitHub</span>
                   </div>
                   <div class="rail-connect-item">
-                    <button class="rail-connect-btn linkedin" type="button" aria-label="Connect LinkedIn">
+                    <button id="rail-connect-linkedin" class="rail-connect-btn linkedin" type="button" aria-label="Connect LinkedIn">
                       <span class="material-symbols-outlined">work</span>
                     </button>
-                    <span class="rail-connect-label">Connect LinkedIn</span>
+                    <span id="rail-connect-linkedin-label" class="rail-connect-label">Connect LinkedIn</span>
                   </div>
                 </div>
               </div>
 
               <div class="rail-copilot-hero">
                 <p class="rail-micro-top">Hold to speak</p>
-                <div class="voice-orb-minimal" aria-hidden="true">
+                <button id="voice-rail-orb-btn" class="voice-orb-minimal" type="button" aria-label="Hold to speak with Copilot">
                   <div class="orb-minimal-ring-1"></div>
                   <div class="orb-minimal-ring-2"></div>
                   <div class="orb-minimal-core"><span class="material-symbols-outlined">mic</span></div>
-                </div>
-                <p class="rail-micro-bottom">Ask Copilot anything</p>
+                </button>
+                <p id="rail-copilot-insight" class="rail-micro-bottom">Ask Copilot anything</p>
               </div>
 
-              <div class="rail-prompts">
-                <button class="rail-chip" type="button">Which contract fits my skills best?</button>
-                <button class="rail-chip" type="button">Draft a quick proposal for the café reel</button>
-              </div>
+              <div id="rail-prompts" class="rail-prompts"></div>
             </aside>
           </div>
         </div>
@@ -957,6 +983,8 @@
       const context = mode === 'speaking' ? 'urgencia' : mode === 'processing' ? 'instavel' : 'psicologia';
       state.blob.setBubbleContext(context);
     }
+
+    updateRailOrbState();
   }
 
   function updateVoiceControlUI() {
@@ -975,6 +1003,8 @@
     const icon = muteBtn.querySelector('.material-symbols-outlined');
     if (icon) icon.textContent = state.voiceMuted ? 'volume_off' : 'volume_up';
     if (muteLabel) muteLabel.textContent = state.voiceMuted ? 'Unmute' : 'Mute';
+
+    updateRailOrbState();
   }
 
   function renderAssistantWave(values = []) {
@@ -1678,7 +1708,17 @@
   }
 
   function renderJobs(profile) {
-    const matches = buildMatches(profile);
+    const matchesRaw = buildMatches(profile);
+    const activeFilter = String(state.activeSkillFilter || '').toLowerCase().trim();
+    const matches = activeFilter
+      ? (() => {
+          const filtered = matchesRaw.filter((job) => {
+            const haystack = `${job.title} ${job.type} ${job.location} ${(job.keywords || []).join(' ')}`.toLowerCase();
+            return haystack.includes(activeFilter);
+          });
+          return filtered.length ? filtered : matchesRaw;
+        })()
+      : matchesRaw;
     const maxScore = Math.max(1, ...matches.map((m) => Number(m._score || 0)));
     const minScore = Math.min(...matches.map((m) => Number(m._score || 0)));
     $('voice-jobs-list').innerHTML = matches.map((job, index) => {
@@ -1720,6 +1760,7 @@
     if (profile?.work_type) pills.push(`Work type: ${profile.work_type}`);
     if (!pills.length) pills.push('Profile ready');
     $('voice-profile-pills').innerHTML = pills.map((p, idx) => `<span class="voice-pill ${idx === 0 ? 'active' : ''}">${p}</span>`).join('');
+    renderSidebar(profile);
   }
 
   function buildResumeText(profile) {
@@ -1776,6 +1817,311 @@
           copyBtn.textContent = 'Copy failed';
         }
       };
+    }
+  }
+
+  function escapeHtml(value = '') {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function getDisplayName() {
+    return (
+      state.conversation?.name
+      || state.session?.user?.user_metadata?.full_name
+      || state.session?.user?.email?.split('@')?.[0]
+      || 'Gig Worker'
+    );
+  }
+
+  function inferSkillList(profile = {}) {
+    const fromProfile = Array.isArray(profile?.skills) ? profile.skills : [];
+    const fromConversation = Array.isArray(state.conversation?.skills) ? state.conversation.skills : [];
+    const fromTags = extractKeywordTags(state.transcriptLive)
+      .filter((t) => !/work|matches|profile/i.test(t));
+    const merged = [...fromProfile, ...fromConversation, ...fromTags]
+      .map((s) => String(s || '').trim())
+      .filter(Boolean);
+    return [...new Set(merged)].slice(0, 5);
+  }
+
+  function inferSkillIcon(skill = '') {
+    const s = String(skill || '').toLowerCase();
+    if (/react|javascript|node|python|code|api|backend|frontend|mern/.test(s)) return 'code';
+    if (/ai|ml|llm|automation|data/.test(s)) return 'psychology';
+    if (/design|figma|ui|ux/.test(s)) return 'palette';
+    if (/video|content|social|writing|copy/.test(s)) return 'edit_square';
+    if (/sales|strategy|growth|marketing/.test(s)) return 'trending_up';
+    if (/delivery|local|courier|driver/.test(s)) return 'local_shipping';
+    return 'bolt';
+  }
+
+  function buildProfileDescription(profile = {}) {
+    const level = profile?.level ? `${profile.level} level` : 'ready to work';
+    const workType = profile?.work_type ? `${profile.work_type} opportunities` : 'flexible gigs';
+    const interests = Array.isArray(profile?.interests) ? profile.interests.filter(Boolean).slice(0, 2) : [];
+    const interestPart = interests.length ? ` • ${interests.join(' • ')}` : '';
+    return `${level} • ${workType}${interestPart}`;
+  }
+
+  function getAvatarUrl(name = '') {
+    const fromMeta = state.session?.user?.user_metadata?.avatar_url || state.session?.user?.user_metadata?.picture || '';
+    if (fromMeta) return String(fromMeta);
+    const safe = encodeURIComponent(String(name || 'User'));
+    return `https://ui-avatars.com/api/?name=${safe}&background=f3f6ff&color=2d3550&size=248`;
+  }
+
+  function socialStorageKey(network) {
+    const uid = state.session?.user?.id || 'anon';
+    return `giggrab:${uid}:${network}:connection`;
+  }
+
+  function readStoredConnection(network) {
+    try {
+      const raw = window.localStorage.getItem(socialStorageKey(network));
+      if (!raw) return { connected: false, url: '' };
+      const parsed = JSON.parse(raw);
+      const url = String(parsed?.url || '').trim();
+      const connected = Boolean(parsed?.connected || url);
+      return { connected, url };
+    } catch {
+      return { connected: false, url: '' };
+    }
+  }
+
+  function inferSocialConnections() {
+    const meta = state.session?.user?.user_metadata || {};
+    const identities = Array.isArray(state.session?.user?.identities) ? state.session.user.identities : [];
+    const providers = new Set(identities.map((item) => String(item?.provider || '').toLowerCase()));
+
+    const githubUrl = String(meta.github_url || meta.github || '').trim();
+    const linkedinUrl = String(meta.linkedin_url || meta.linkedin || '').trim();
+    const githubStored = readStoredConnection('github');
+    const linkedinStored = readStoredConnection('linkedin');
+
+    return {
+      github: {
+        connected: Boolean(providers.has('github') || githubUrl || githubStored.connected),
+        url: githubUrl || githubStored.url || '',
+      },
+      linkedin: {
+        connected: Boolean(providers.has('linkedin') || linkedinUrl || linkedinStored.connected),
+        url: linkedinUrl || linkedinStored.url || '',
+      },
+    };
+  }
+
+  async function persistSocialConnection(network, connection) {
+    state.socialConnections[network] = { ...connection };
+    try {
+      window.localStorage.setItem(socialStorageKey(network), JSON.stringify(connection));
+    } catch {
+      // ignore local storage failures
+    }
+
+    const key = network === 'github' ? 'github_url' : 'linkedin_url';
+    try {
+      const { data, error } = await sb.auth.updateUser({ data: { [key]: connection.url || null } });
+      if (!error && data?.user && state.session?.user) {
+        state.session = { ...state.session, user: data.user };
+      }
+    } catch {
+      // keep local fallback state
+    }
+  }
+
+  function buildSuggestedPrompts(profile = {}) {
+    const skills = inferSkillList(profile);
+    const topMatch = buildMatches(profile)?.[0]?.title || 'the top contract';
+    const workType = String(profile?.work_type || state.conversation?.job_type || 'remote');
+    const firstSkill = skills[0] || 'my strengths';
+    const secondSkill = skills[1] || firstSkill;
+
+    const prompts = [
+      `Which current jobs match ${firstSkill} best?`,
+      `Draft a quick proposal for ${topMatch}.`,
+      `What should I improve to land more ${workType} work?`,
+      `Rewrite my intro around ${secondSkill}.`,
+    ];
+
+    return [...new Set(prompts.map((p) => p.trim()).filter(Boolean))].slice(0, 3);
+  }
+
+  function ensureProfileFromState() {
+    if (state.profile) return state.profile;
+    return {
+      skills: inferSkillList({}),
+      experience: '',
+      interests: [],
+      work_type: state.conversation?.job_type || 'any',
+      level: 'intermediate',
+    };
+  }
+
+  function mergeConversationIntoProfile(profile = {}, updatedState = {}) {
+    const base = profile && typeof profile === 'object' ? { ...profile } : {};
+    const skills = [...new Set([...(Array.isArray(base.skills) ? base.skills : []), ...(Array.isArray(updatedState.skills) ? updatedState.skills : [])])]
+      .map((s) => String(s || '').trim())
+      .filter(Boolean)
+      .slice(0, 8);
+
+    return {
+      skills,
+      experience: String(base.experience || ''),
+      interests: Array.isArray(base.interests) ? base.interests : [],
+      work_type: updatedState?.job_type || base.work_type || 'any',
+      level: base.level || 'intermediate',
+    };
+  }
+
+  function updateRailOrbState() {
+    const orb = $('voice-rail-orb-btn');
+    if (!orb) return;
+    orb.classList.toggle('is-listening', state.assistantMode === 'listening' || state.isRecording);
+    orb.classList.toggle('is-processing', state.assistantMode === 'processing' || state.isProcessing);
+    orb.classList.toggle('is-speaking', state.assistantMode === 'speaking' || state.aiAudioPlaying);
+  }
+
+  function renderSidebar(profile = null) {
+    const currentProfile = profile || ensureProfileFromState();
+    const name = getDisplayName();
+    const subtitle = buildProfileDescription(currentProfile);
+    const skills = inferSkillList(currentProfile);
+    const prompts = state.suggestedPrompts.length ? state.suggestedPrompts : buildSuggestedPrompts(currentProfile);
+    state.suggestedPrompts = prompts;
+
+    const avatar = $('rail-avatar-img');
+    const nameEl = $('rail-name');
+    const subtitleEl = $('rail-subtitle');
+    const skillRow = $('rail-skill-row');
+    const promptsWrap = $('rail-prompts');
+    const insight = $('rail-copilot-insight');
+    const githubBtn = $('rail-connect-github');
+    const githubLabel = $('rail-connect-github-label');
+    const linkedinBtn = $('rail-connect-linkedin');
+    const linkedinLabel = $('rail-connect-linkedin-label');
+
+    if (avatar) {
+      avatar.src = getAvatarUrl(name);
+      avatar.alt = `${name} avatar`;
+    }
+    if (nameEl) nameEl.textContent = name;
+    if (subtitleEl) subtitleEl.textContent = subtitle;
+    if (insight) insight.textContent = state.copilotInsight || 'Ask Copilot anything';
+
+    if (skillRow) {
+      skillRow.innerHTML = '';
+      skills.forEach((skill, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `rail-skill rail-skill-btn ${state.activeSkillFilter === skill ? 'active' : ''}`;
+        btn.innerHTML = `<span class="material-symbols-outlined">${inferSkillIcon(skill)}</span>${escapeHtml(skill)}`;
+        btn.addEventListener('click', () => {
+          state.activeSkillFilter = state.activeSkillFilter === skill ? '' : skill;
+          renderJobs(currentProfile);
+          renderSidebar(currentProfile);
+        });
+        skillRow.appendChild(btn);
+
+        if (idx < skills.length - 1) {
+          const dot = document.createElement('span');
+          dot.className = 'rail-dot';
+          skillRow.appendChild(dot);
+        }
+      });
+    }
+
+    if (promptsWrap) {
+      promptsWrap.innerHTML = prompts
+        .map((prompt) => `<button class="rail-chip" type="button" data-prompt="${escapeHtml(prompt)}">${escapeHtml(prompt)}</button>`)
+        .join('');
+      promptsWrap.querySelectorAll('.rail-chip').forEach((chip) => {
+        chip.addEventListener('click', async () => {
+          const prompt = chip.getAttribute('data-prompt') || '';
+          await runCopilotTextPrompt(prompt);
+        });
+      });
+    }
+
+    const github = state.socialConnections.github || { connected: false, url: '' };
+    const linkedin = state.socialConnections.linkedin || { connected: false, url: '' };
+
+    if (githubBtn) githubBtn.classList.toggle('connected', !!github.connected);
+    if (linkedinBtn) linkedinBtn.classList.toggle('connected', !!linkedin.connected);
+    if (githubLabel) githubLabel.textContent = github.connected ? 'GitHub connected' : 'Connect GitHub';
+    if (linkedinLabel) linkedinLabel.textContent = linkedin.connected ? 'LinkedIn connected' : 'Connect LinkedIn';
+
+    updateRailOrbState();
+  }
+
+  async function handleSocialConnect(network) {
+    const current = state.socialConnections[network] || { connected: false, url: '' };
+    const label = network === 'github' ? 'GitHub' : 'LinkedIn';
+
+    if (current.connected && current.url) {
+      window.open(current.url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    const input = window.prompt(`Paste your ${label} profile URL`, current.url || '');
+    if (input === null) return;
+    const text = String(input || '').trim();
+    const normalized = text && !/^https?:\/\//i.test(text) ? `https://${text}` : text;
+
+    const next = {
+      connected: Boolean(normalized),
+      url: normalized,
+    };
+
+    await persistSocialConnection(network, next);
+    renderSidebar(state.profile);
+  }
+
+  async function runCopilotTextPrompt(inputText = '') {
+    const prompt = String(inputText || '').trim();
+    if (!prompt || !state.session?.user?.id || state.isProcessing || state.isRecording) return;
+
+    state.isProcessing = true;
+    updateVoiceControlUI();
+    setAssistantState('processing');
+    state.copilotInsight = 'Thinking...';
+    renderSidebar(state.profile);
+
+    try {
+      state.conversationTurns.push(prompt);
+      const generated = await postGenerateWithRetry({
+        user_id: state.session.user.id,
+        user_input: prompt,
+        conversation_state: state.conversation,
+      });
+
+      state.conversation = normalizeConversationState(generated.updated_state || state.conversation);
+      state.profile = mergeConversationIntoProfile(ensureProfileFromState(), state.conversation);
+      state.suggestedPrompts = buildSuggestedPrompts(state.profile);
+
+      const aiResponse = String(generated.response || '').trim();
+      state.copilotInsight = aiResponse || 'Got it. Ask another question.';
+
+      renderProfile(state.profile);
+      renderResume(state.profile);
+      renderJobs(state.profile);
+      renderSidebar(state.profile);
+
+      if (aiResponse) {
+        await speakConversationalResponse(aiResponse);
+      }
+    } catch (error) {
+      console.error('copilot_prompt_failed', error);
+      state.copilotInsight = 'I hit a connection issue. Try that again.';
+      renderSidebar(state.profile);
+    } finally {
+      state.isProcessing = false;
+      updateVoiceControlUI();
+      if (!state.aiAudioPlaying && !state.isRecording) setAssistantState('idle');
     }
   }
 
@@ -2007,6 +2353,16 @@
 
       state.transcriptLive = transcript;
       $('voice-live-transcript').textContent = transcript;
+
+      if (onboardingComplete) {
+        showLoader(false);
+        showProcessing(false);
+        await runCopilotTextPrompt(transcript);
+        state.isProcessing = false;
+        updateVoiceControlUI();
+        return;
+      }
+
       state.conversationTurns.push(transcript);
       animateProcessingTags(extractKeywordTags(transcript));
 
@@ -2054,12 +2410,16 @@
       setStatus('✔ Profile ready', 'success');
 
       state.profile = profile;
+      state.profile = mergeConversationIntoProfile(state.profile, state.conversation);
+      state.suggestedPrompts = buildSuggestedPrompts(state.profile);
+      state.copilotInsight = 'Ask Copilot anything';
       if (!state.marketJobs.length) {
         await loadMarketJobs();
       }
-      renderProfile(profile);
-      renderResume(profile);
-      renderJobs(profile);
+      renderProfile(state.profile);
+      renderResume(state.profile);
+      renderJobs(state.profile);
+      renderSidebar(state.profile);
       setTimeout(() => {
         const onboarding = $('voice-onboarding-screen');
         const feed = $('voice-results-screen');
@@ -2094,9 +2454,77 @@
     }
   }
 
+  function bindSidebarActions() {
+    const githubBtn = $('rail-connect-github');
+    const linkedinBtn = $('rail-connect-linkedin');
+    const orbBtn = $('voice-rail-orb-btn');
+    const avatar = $('rail-avatar-img');
+    const nameEl = $('rail-name');
+
+    if (githubBtn && !githubBtn.dataset.bound) {
+      githubBtn.dataset.bound = '1';
+      githubBtn.addEventListener('click', () => handleSocialConnect('github'));
+    }
+
+    if (linkedinBtn && !linkedinBtn.dataset.bound) {
+      linkedinBtn.dataset.bound = '1';
+      linkedinBtn.addEventListener('click', () => handleSocialConnect('linkedin'));
+    }
+
+    const focusProfile = () => {
+      const card = $('voice-resume-card');
+      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    if (avatar && !avatar.dataset.bound) {
+      avatar.dataset.bound = '1';
+      avatar.style.cursor = 'pointer';
+      avatar.addEventListener('click', focusProfile);
+    }
+
+    if (nameEl && !nameEl.dataset.bound) {
+      nameEl.dataset.bound = '1';
+      nameEl.style.cursor = 'pointer';
+      nameEl.addEventListener('click', focusProfile);
+    }
+
+    if (orbBtn && !orbBtn.dataset.bound) {
+      orbBtn.dataset.bound = '1';
+
+      const holdStart = async (event) => {
+        event.preventDefault();
+        if (state.isProcessing || state.aiAudioPlaying) return;
+        state.railHoldActive = true;
+        if (!state.isRecording) await startRecording();
+      };
+
+      const holdEnd = (event) => {
+        event.preventDefault();
+        if (!state.railHoldActive) return;
+        state.railHoldActive = false;
+        state.railHoldEndedAt = Date.now();
+        if (state.isRecording) stopRecording('manual');
+      };
+
+      orbBtn.addEventListener('mousedown', holdStart);
+      orbBtn.addEventListener('touchstart', holdStart, { passive: false });
+      window.addEventListener('mouseup', holdEnd);
+      window.addEventListener('touchend', holdEnd, { passive: false });
+      orbBtn.addEventListener('mouseleave', holdEnd);
+
+      orbBtn.addEventListener('click', async () => {
+        if (Date.now() - state.railHoldEndedAt < 280) return;
+        if (state.isProcessing || state.aiAudioPlaying) return;
+        if (state.isRecording) stopRecording('manual');
+        else await startRecording();
+      });
+    }
+  }
+
   hideLegacyFeedUI();
   injectOnboardingStyles();
   injectOnboardingUI();
+  bindSidebarActions();
   initVoiceBubble();
   createWaveBars();
   updateWaveBars(Array.from({ length: 28 }, () => 3));
@@ -2134,6 +2562,8 @@
       return;
     }
     state.session = session;
+    state.socialConnections = inferSocialConnections();
+    renderSidebar(state.profile);
     await loadMarketJobs();
     detectLocationAfterLogin(session.user.id);
     onboardingComplete = false;
