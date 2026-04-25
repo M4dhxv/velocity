@@ -381,10 +381,10 @@
       .voice-app-shell {
         min-height: 100vh;
         width: 100%;
-        background: #000;
+        background: #fff;
       }
       .voice-screen { min-height: 100vh; width: 100%; display: flex; align-items: center; justify-content: center; }
-      #voice-onboarding-screen { background: #000; }
+      #voice-onboarding-screen { background: #fff; }
       .voice-hidden { display: none !important; }
       .voice-onboard-shell { width: min(1040px, 100%); min-height: 100vh; padding: .6rem; display: grid; place-items: center; }
       .onboarding-wrap {
@@ -399,7 +399,7 @@
         position: relative;
         overflow: visible;
       }
-      .onboarding-wrap::before { content: ''; position: absolute; width: 680px; height: 680px; background: radial-gradient(circle, rgba(255,255,255,.08) 0%, rgba(255,255,255,.02) 36%, rgba(255,255,255,0) 70%); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+      .onboarding-wrap::before { content: ''; position: absolute; width: 680px; height: 680px; background: radial-gradient(circle, rgba(0,0,0,.10) 0%, rgba(0,0,0,.03) 36%, rgba(0,0,0,0) 70%); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
       .onboarding-wrap > * { position: relative; z-index: 1; }
       .voice-title, .voice-subtitle, .voice-status, .voice-type-btn, .voice-processing { display: none !important; }
       .voice-live-transcript {
@@ -407,7 +407,7 @@
         max-width: 640px;
         margin: 0 auto 1rem;
         padding: .35rem .55rem;
-        color: rgba(255,255,255,.95);
+        color: rgba(0,0,0,.88);
         font-size: .96rem;
         font-weight: 600;
         letter-spacing: .01em;
@@ -430,7 +430,7 @@
       .assistant-shell .blob {
         width: 100%;
         height: 100%;
-        background: #000;
+        background: #fff;
         filter: brightness(1) contrast(40);
         overflow: hidden;
         padding: 20px;
@@ -452,7 +452,7 @@
         height: 75px;
         margin: 2px;
         position: relative;
-        background: #fff;
+        background: #000;
         display: inline-block;
         animation: rotateAntiTrigo 3s linear infinite;
       }
