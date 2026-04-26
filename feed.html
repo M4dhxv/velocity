@@ -371,6 +371,11 @@
       github: { connected: false, url: '' },
       linkedin: { connected: false, url: '' },
     },
+    resumeDraft: null,
+    matchFeedback: {
+      avoidTerms: [],
+      preferTerms: [],
+    },
     activeSkillFilter: '',
     railHoldActive: false,
     railHoldEndedAt: 0,
@@ -394,6 +399,107 @@
         background: #fff;
       }
       .voice-screen { min-height: 100vh; width: 100%; display: flex; align-items: center; justify-content: center; }
+      #voice-entry-screen { background: #fff; }
+      .voice-entry-shell {
+        width: min(760px, 100%);
+        padding: 1.2rem;
+        display: grid;
+        place-items: center;
+      }
+      .voice-entry-card {
+        width: min(640px, 100%);
+        border: 1px solid #dbe3f8;
+        background: #fff;
+        border-radius: 24px;
+        padding: 1.35rem 1.25rem 1.15rem;
+        box-shadow: 0 14px 34px rgba(39,46,66,.08);
+      }
+      .voice-entry-title {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: clamp(1.35rem, 3.2vw, 2.15rem);
+        line-height: 1.15;
+        letter-spacing: -.02em;
+        color: #1f2b45;
+        font-weight: 800;
+        margin: 0;
+      }
+      .voice-entry-subtitle {
+        margin: .7rem 0 0;
+        color: #4c5d81;
+        font-size: .95rem;
+        line-height: 1.55;
+        font-weight: 600;
+      }
+      .voice-entry-steps {
+        margin: 1rem 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: .52rem;
+      }
+      .voice-entry-step {
+        display: flex;
+        align-items: flex-start;
+        gap: .55rem;
+        border: 1px solid #e3e8f6;
+        background: #f8faff;
+        border-radius: 14px;
+        padding: .6rem .7rem;
+      }
+      .voice-entry-step-index {
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        background: #d9e2ff;
+        color: #2f466f;
+        font-size: .72rem;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        margin-top: .1rem;
+      }
+      .voice-entry-step-text {
+        color: #2f466f;
+        font-size: .86rem;
+        line-height: 1.45;
+        font-weight: 700;
+      }
+      .voice-entry-actions {
+        margin-top: 1rem;
+        display: flex;
+        align-items: center;
+        gap: .55rem;
+        flex-wrap: wrap;
+      }
+      .voice-entry-btn {
+        border: none;
+        border-radius: 999px;
+        padding: .6rem .95rem;
+        font-size: .83rem;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-weight: 800;
+        cursor: pointer;
+        transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+      }
+      .voice-entry-btn:hover { transform: translateY(-1px); }
+      .voice-entry-btn.primary {
+        background: #3fff8b;
+        color: #005d2c;
+        box-shadow: 0 8px 18px rgba(63,255,139,.26);
+      }
+      .voice-entry-btn.secondary {
+        background: #eef4ff;
+        color: #2f466f;
+      }
+      .voice-entry-helper {
+        margin: .85rem 0 0;
+        color: #627093;
+        font-size: .76rem;
+        font-weight: 700;
+      }
       #voice-onboarding-screen { background: #fff; }
       .voice-hidden { display: none !important; }
       .voice-onboard-shell { width: min(1040px, 100%); min-height: 100vh; padding: .6rem; display: grid; place-items: center; }
@@ -821,6 +927,10 @@
       .voice-proc-tag { font-size: .73rem; font-weight: 800; background: #eef4ff; color: #2f466f; border-radius: 999px; padding: .28rem .62rem; opacity: 0; transform: translateY(6px); animation: tag-in .24s ease forwards; }
       @keyframes tag-in { to { opacity: 1; transform: translateY(0); } }
       @media (max-width: 820px) {
+        .voice-entry-shell { padding: .9rem .72rem; }
+        .voice-entry-card { border-radius: 18px; padding: 1rem .92rem .94rem; }
+        .voice-entry-actions { flex-direction: column; align-items: stretch; }
+        .voice-entry-btn { width: 100%; }
         .voice-onboard-shell { padding: .75rem .65rem; }
         .assistant-shell { --assist-w: 260px; --assist-h: 260px; }
         .assistant-shell .processing-blob { --size: 210px; }
@@ -860,7 +970,37 @@
     const shell = document.createElement('main');
     shell.className = 'voice-app-shell';
     shell.innerHTML = `
-      <section id="voice-onboarding-screen" class="voice-screen">
+      <section id="voice-entry-screen" class="voice-screen voice-hidden">
+        <div class="voice-entry-shell">
+          <article class="voice-entry-card">
+            <h1 class="voice-entry-title">Ready to optimize your job search?</h1>
+            <p class="voice-entry-subtitle">Use voice to refine your resume and improve job matching in real time.</p>
+
+            <ul class="voice-entry-steps" aria-label="How voice copilot works">
+              <li class="voice-entry-step">
+                <span class="voice-entry-step-index">1</span>
+                <span class="voice-entry-step-text">Tell Copilot what roles you want (or don’t want)</span>
+              </li>
+              <li class="voice-entry-step">
+                <span class="voice-entry-step-index">2</span>
+                <span class="voice-entry-step-text">Update skills and resume while talking</span>
+              </li>
+              <li class="voice-entry-step">
+                <span class="voice-entry-step-index">3</span>
+                <span class="voice-entry-step-text">Get smarter job matches as you interact</span>
+              </li>
+            </ul>
+
+            <div class="voice-entry-actions">
+              <button id="voice-entry-start-btn" class="voice-entry-btn primary" type="button">Start Voice Session</button>
+              <button id="voice-entry-skip-btn" class="voice-entry-btn secondary" type="button">Skip for now</button>
+            </div>
+
+            <p class="voice-entry-helper">Voice can update Resume Draft Build and improve recommendations.</p>
+          </article>
+        </div>
+      </section>
+      <section id="voice-onboarding-screen" class="voice-screen voice-hidden">
         <div class="voice-onboard-shell">
           <div class="onboarding-wrap">
             <h1 class="voice-title">AI Voice <span>Assistant</span></h1>
@@ -1433,6 +1573,59 @@
     return parts.join('. ');
   }
 
+  function entrySeenKey() {
+    const uid = state.session?.user?.id || 'anon';
+    return `giggrab:${uid}:post-login-entry-seen`;
+  }
+
+  function hasSeenEntryScreen() {
+    try {
+      return window.localStorage.getItem(entrySeenKey()) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  function markEntryScreenSeen() {
+    try {
+      window.localStorage.setItem(entrySeenKey(), '1');
+    } catch {
+      // no-op
+    }
+  }
+
+  function showOnlyScreen(screenId) {
+    const ids = ['voice-entry-screen', 'voice-onboarding-screen', 'voice-results-screen'];
+    ids.forEach((id) => {
+      const el = $(id);
+      if (!el) return;
+      if (id === screenId) el.classList.remove('voice-hidden');
+      else el.classList.add('voice-hidden');
+      el.style.opacity = '1';
+    });
+  }
+
+  function enterResultsScreenDirectly() {
+    const baseProfile = state.profile && typeof state.profile === 'object'
+      ? state.profile
+      : { skills: [], experience: '', interests: [], work_type: 'any', level: 'intermediate' };
+    state.profile = baseProfile;
+    renderProfile(state.profile);
+    renderResume(state.profile);
+    state.suggestedPrompts = buildSuggestedPrompts();
+    renderJobs(state.profile);
+    renderSidebar();
+    onboardingComplete = true;
+    showOnlyScreen('voice-results-screen');
+  }
+
+  async function enterVoiceSessionFromEntry() {
+    markEntryScreenSeen();
+    onboardingComplete = false;
+    showOnlyScreen('voice-onboarding-screen');
+    await startConversation();
+  }
+
   async function startConversation() {
     state.conversation = defaultConversationState();
     state.conversationTurns = [];
@@ -1619,9 +1812,10 @@
 
   function buildMatches(profile) {
     const jobs = state.marketJobs.length ? [...state.marketJobs] : [...fallbackJobs];
-    const skills = Array.isArray(profile?.skills) && profile.skills.length
-      ? profile.skills.map((s) => String(s))
-      : extractKeywordTags(state.transcriptLive).map((s) => String(s));
+    const draftSkills = Array.isArray(state.resumeDraft?.topSkills) ? state.resumeDraft.topSkills : [];
+    const skills = draftSkills.length
+      ? draftSkills.map((s) => String(s))
+      : (Array.isArray(profile?.skills) ? profile.skills.map((s) => String(s)) : []);
     const interests = Array.isArray(profile?.interests) ? profile.interests.map((s) => String(s)) : [];
 
     const normalizeWorkType = (value = '') => {
@@ -1668,6 +1862,8 @@
 
     const expandedSkills = expandTerms(skills);
     const expandedInterests = expandTerms(interests);
+    const avoidTerms = expandTerms(state.matchFeedback?.avoidTerms || []);
+    const preferTerms = expandTerms(state.matchFeedback?.preferTerms || []);
     let workType = normalizeWorkType(profile?.work_type);
     if (state.userCity) {
       workType = 'any';
@@ -1690,6 +1886,16 @@
       expandedInterests.forEach((interest) => {
         if (jobTokens.has(interest)) score += 2;
         else if (haystack.includes(interest)) score += 1;
+      });
+
+      preferTerms.forEach((term) => {
+        if (jobTokens.has(term)) score += 3;
+        else if (haystack.includes(term)) score += 2;
+      });
+
+      avoidTerms.forEach((term) => {
+        if (jobTokens.has(term)) score -= 5;
+        else if (haystack.includes(term)) score -= 3;
       });
 
       if (workType !== 'any') {
@@ -1760,32 +1966,57 @@
     if (profile?.work_type) pills.push(`Work type: ${profile.work_type}`);
     if (!pills.length) pills.push('Profile ready');
     $('voice-profile-pills').innerHTML = pills.map((p, idx) => `<span class="voice-pill ${idx === 0 ? 'active' : ''}">${p}</span>`).join('');
-    renderSidebar(profile);
+    renderSidebar();
   }
 
-  function buildResumeText(profile) {
-    const userName = state.session?.user?.user_metadata?.full_name || state.session?.user?.email?.split('@')?.[0] || 'Gig Worker';
-    const skills = Array.isArray(profile?.skills) && profile.skills.length
-      ? profile.skills.slice(0, 5)
-      : extractKeywordTags(state.transcriptLive)
-          .filter((t) => !/work|matches|profile/i.test(t))
-          .slice(0, 5);
-    const interests = Array.isArray(profile?.interests) && profile.interests.length ? profile.interests.slice(0, 3) : [];
-    const level = profile?.level || 'intermediate';
-    const workType = profile?.work_type || 'any';
-    return [
-      `${userName}`,
-      `Level: ${level} | Work preference: ${workType}`,
-      `Top skills: ${skills.join(', ') || 'Not specified'}`,
-      `Interests: ${interests.join(', ') || 'Not specified'}`,
-      'Summary: Dependable gig worker focused on fast delivery, quality output, and clear communication.'
-    ].join('\n');
+  function buildResumeDraftData(profile = {}) {
+    const name = String(
+      state.conversation?.name
+      || state.session?.user?.user_metadata?.full_name
+      || state.session?.user?.email?.split('@')?.[0]
+      || 'Gig Worker'
+    ).trim();
+
+    const topSkills = Array.isArray(profile?.skills)
+      ? profile.skills.map((s) => String(s || '').trim()).filter(Boolean).slice(0, 5)
+      : [];
+    const interests = Array.isArray(profile?.interests)
+      ? profile.interests.map((s) => String(s || '').trim()).filter(Boolean).slice(0, 3)
+      : [];
+
+    const level = String(profile?.level || '').trim();
+    const workPreference = String(profile?.work_type || '').trim();
+    const availability = [state.userCity, state.userCountry].filter(Boolean).join(', ');
+
+    const metadataParts = [];
+    if (level) metadataParts.push(`Level: ${level}`);
+    if (workPreference) metadataParts.push(`Work preference: ${workPreference}`);
+    if (availability) metadataParts.push(`Availability: ${availability}`);
+
+    const textLines = [
+      name,
+      metadataParts.join(' | '),
+      `Top skills: ${topSkills.join(', ') || 'Not captured yet'}`,
+      `Interests: ${interests.join(', ') || 'Not captured yet'}`,
+    ].filter(Boolean);
+
+    return {
+      name,
+      level,
+      workPreference,
+      availability,
+      topSkills,
+      interests,
+      text: textLines.join('\n'),
+    };
   }
 
   function renderResume(profile) {
-    const resumeText = buildResumeText(profile);
+    const draft = buildResumeDraftData(profile);
+    state.resumeDraft = draft;
+    const resumeText = draft.text;
     $('voice-resume-card').innerHTML = `
-      <h3 class="voice-resume-title"><span class="material-symbols-outlined" style="font-size:16px">description</span>Resume draft built</h3>
+      <h3 class="voice-resume-title"><span class="material-symbols-outlined" style="font-size:16px">description</span>Resume Draft Build</h3>
       <p class="voice-resume-text">${resumeText}</p>
       <div class="voice-resume-actions">
         <button id="voice-resume-download" class="voice-resume-btn primary" type="button">Download .txt</button>
@@ -1818,6 +2049,8 @@
         }
       };
     }
+
+    renderSidebar();
   }
 
   function escapeHtml(value = '') {
@@ -1829,26 +2062,6 @@
       .replace(/'/g, '&#39;');
   }
 
-  function getDisplayName() {
-    return (
-      state.conversation?.name
-      || state.session?.user?.user_metadata?.full_name
-      || state.session?.user?.email?.split('@')?.[0]
-      || 'Gig Worker'
-    );
-  }
-
-  function inferSkillList(profile = {}) {
-    const fromProfile = Array.isArray(profile?.skills) ? profile.skills : [];
-    const fromConversation = Array.isArray(state.conversation?.skills) ? state.conversation.skills : [];
-    const fromTags = extractKeywordTags(state.transcriptLive)
-      .filter((t) => !/work|matches|profile/i.test(t));
-    const merged = [...fromProfile, ...fromConversation, ...fromTags]
-      .map((s) => String(s || '').trim())
-      .filter(Boolean);
-    return [...new Set(merged)].slice(0, 5);
-  }
-
   function inferSkillIcon(skill = '') {
     const s = String(skill || '').toLowerCase();
     if (/react|javascript|node|python|code|api|backend|frontend|mern/.test(s)) return 'code';
@@ -1858,14 +2071,6 @@
     if (/sales|strategy|growth|marketing/.test(s)) return 'trending_up';
     if (/delivery|local|courier|driver/.test(s)) return 'local_shipping';
     return 'bolt';
-  }
-
-  function buildProfileDescription(profile = {}) {
-    const level = profile?.level ? `${profile.level} level` : 'ready to work';
-    const workType = profile?.work_type ? `${profile.work_type} opportunities` : 'flexible gigs';
-    const interests = Array.isArray(profile?.interests) ? profile.interests.filter(Boolean).slice(0, 2) : [];
-    const interestPart = interests.length ? ` • ${interests.join(' • ')}` : '';
-    return `${level} • ${workType}${interestPart}`;
   }
 
   function getAvatarUrl(name = '') {
@@ -1934,32 +2139,21 @@
     }
   }
 
-  function buildSuggestedPrompts(profile = {}) {
-    const skills = inferSkillList(profile);
-    const topMatch = buildMatches(profile)?.[0]?.title || 'the top contract';
-    const workType = String(profile?.work_type || state.conversation?.job_type || 'remote');
-    const firstSkill = skills[0] || 'my strengths';
-    const secondSkill = skills[1] || firstSkill;
+  function buildSuggestedPrompts() {
+    const draft = state.resumeDraft;
+    const profile = state.profile || {};
+    const topSkills = Array.isArray(draft?.topSkills) ? draft.topSkills : [];
+    const topMatch = buildMatches(profile)?.[0]?.title || 'the top role in my feed';
+    const workPreference = draft?.workPreference || 'my preference';
+    const leadSkill = topSkills[0] || 'my top skills';
 
     const prompts = [
-      `Which current jobs match ${firstSkill} best?`,
-      `Draft a quick proposal for ${topMatch}.`,
-      `What should I improve to land more ${workType} work?`,
-      `Rewrite my intro around ${secondSkill}.`,
+      `Which jobs in my feed align best with ${leadSkill}?`,
+      `I don’t like these jobs. Re-rank using my resume draft.`,
+      `Refine my matches toward ${workPreference} work and ${topMatch}.`,
     ];
 
     return [...new Set(prompts.map((p) => p.trim()).filter(Boolean))].slice(0, 3);
-  }
-
-  function ensureProfileFromState() {
-    if (state.profile) return state.profile;
-    return {
-      skills: inferSkillList({}),
-      experience: '',
-      interests: [],
-      work_type: state.conversation?.job_type || 'any',
-      level: 'intermediate',
-    };
   }
 
   function mergeConversationIntoProfile(profile = {}, updatedState = {}) {
@@ -1986,12 +2180,17 @@
     orb.classList.toggle('is-speaking', state.assistantMode === 'speaking' || state.aiAudioPlaying);
   }
 
-  function renderSidebar(profile = null) {
-    const currentProfile = profile || ensureProfileFromState();
-    const name = getDisplayName();
-    const subtitle = buildProfileDescription(currentProfile);
-    const skills = inferSkillList(currentProfile);
-    const prompts = state.suggestedPrompts.length ? state.suggestedPrompts : buildSuggestedPrompts(currentProfile);
+  function renderSidebar() {
+    const draft = state.resumeDraft;
+    const name = String(draft?.name || '').trim() || 'Resume Draft Build pending';
+    const subtitleParts = [
+      draft?.level ? `Level: ${draft.level}` : '',
+      draft?.workPreference ? `Work preference: ${draft.workPreference}` : '',
+      draft?.availability ? `Availability: ${draft.availability}` : '',
+    ].filter(Boolean);
+    const subtitle = subtitleParts.join(' • ') || 'Complete onboarding to sync resume details';
+    const skills = Array.isArray(draft?.topSkills) ? draft.topSkills : [];
+    const prompts = state.suggestedPrompts.length ? state.suggestedPrompts : buildSuggestedPrompts();
     state.suggestedPrompts = prompts;
 
     const avatar = $('rail-avatar-img');
@@ -2022,8 +2221,8 @@
         btn.innerHTML = `<span class="material-symbols-outlined">${inferSkillIcon(skill)}</span>${escapeHtml(skill)}`;
         btn.addEventListener('click', () => {
           state.activeSkillFilter = state.activeSkillFilter === skill ? '' : skill;
-          renderJobs(currentProfile);
-          renderSidebar(currentProfile);
+          renderJobs(state.profile || {});
+          renderSidebar();
         });
         skillRow.appendChild(btn);
 
@@ -2078,7 +2277,52 @@
     };
 
     await persistSocialConnection(network, next);
-    renderSidebar(state.profile);
+    renderSidebar();
+  }
+
+  function tokenizePromptTerms(text = '') {
+    const stopwords = new Set([
+      'i', 'me', 'my', 'mine', 'you', 'your', 'the', 'a', 'an', 'and', 'or', 'to', 'for', 'of', 'on', 'in',
+      'is', 'are', 'was', 'were', 'be', 'been', 'it', 'this', 'that', 'these', 'those', 'with', 'from',
+      'job', 'jobs', 'role', 'roles', 'like', 'dont', 'do', 'not', 'another', 'skill', 'skills', 'find',
+      'aligned', 'better', 'work', 'works', 'have', 'has', 'had', 'want', 'need', 'please', 'myself'
+    ]);
+
+    return String(text || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9+.#-]+/g, ' ')
+      .split(/\s+/)
+      .map((t) => t.trim())
+      .filter((t) => t.length > 2 && !stopwords.has(t));
+  }
+
+  function updateFeedbackFromPrompt(prompt = '') {
+    const text = String(prompt || '').trim();
+    if (!text) return;
+
+    const terms = [...new Set(tokenizePromptTerms(text))].slice(0, 6);
+    const lower = text.toLowerCase();
+    const dislike = /\bi\s*(do\s*not|don't)\s*like\b|\bnot\s*interested\b|\bavoid\b|\bskip\b/.test(lower);
+    const prefer = /\bprefer\b|\bmore\s+of\b|\baligned\b|\bbetter\s+fit\b/.test(lower);
+
+    if (dislike && terms.length) {
+      const merged = [...new Set([...(state.matchFeedback.avoidTerms || []), ...terms])].slice(0, 20);
+      state.matchFeedback.avoidTerms = merged;
+    }
+
+    if (prefer && terms.length) {
+      const merged = [...new Set([...(state.matchFeedback.preferTerms || []), ...terms])].slice(0, 20);
+      state.matchFeedback.preferTerms = merged;
+    }
+
+    const skillSignal = /\banother\s+skill\b|\bskill\s+is\b|\bi\s+have\s+another\s+skill\b|\bexperience\s+in\b|\bi\s+also\s+do\b/.test(lower);
+    if (skillSignal && terms.length) {
+      const baseSkills = Array.isArray(state.profile?.skills) ? state.profile.skills : [];
+      state.profile = {
+        ...(state.profile || {}),
+        skills: [...new Set([...baseSkills, ...terms.map((t) => t.charAt(0).toUpperCase() + t.slice(1))])].slice(0, 8),
+      };
+    }
   }
 
   async function runCopilotTextPrompt(inputText = '') {
@@ -2089,27 +2333,32 @@
     updateVoiceControlUI();
     setAssistantState('processing');
     state.copilotInsight = 'Thinking...';
-    renderSidebar(state.profile);
+    renderSidebar();
 
     try {
       state.conversationTurns.push(prompt);
+      updateFeedbackFromPrompt(prompt);
+      const resumeContext = state.resumeDraft?.text ? `\n\nResume Draft Build:\n${state.resumeDraft.text}` : '';
       const generated = await postGenerateWithRetry({
         user_id: state.session.user.id,
-        user_input: prompt,
+        user_input: `${prompt}${resumeContext}`,
         conversation_state: state.conversation,
       });
 
       state.conversation = normalizeConversationState(generated.updated_state || state.conversation);
-      state.profile = mergeConversationIntoProfile(ensureProfileFromState(), state.conversation);
-      state.suggestedPrompts = buildSuggestedPrompts(state.profile);
+      const baseProfile = state.profile && typeof state.profile === 'object'
+        ? state.profile
+        : { skills: [], experience: '', interests: [], work_type: 'any', level: 'intermediate' };
+      state.profile = mergeConversationIntoProfile(baseProfile, state.conversation);
 
       const aiResponse = String(generated.response || '').trim();
       state.copilotInsight = aiResponse || 'Got it. Ask another question.';
 
       renderProfile(state.profile);
       renderResume(state.profile);
+      state.suggestedPrompts = buildSuggestedPrompts();
       renderJobs(state.profile);
-      renderSidebar(state.profile);
+      renderSidebar();
 
       if (aiResponse) {
         await speakConversationalResponse(aiResponse);
@@ -2117,7 +2366,7 @@
     } catch (error) {
       console.error('copilot_prompt_failed', error);
       state.copilotInsight = 'I hit a connection issue. Try that again.';
-      renderSidebar(state.profile);
+      renderSidebar();
     } finally {
       state.isProcessing = false;
       updateVoiceControlUI();
@@ -2411,15 +2660,15 @@
 
       state.profile = profile;
       state.profile = mergeConversationIntoProfile(state.profile, state.conversation);
-      state.suggestedPrompts = buildSuggestedPrompts(state.profile);
       state.copilotInsight = 'Ask Copilot anything';
       if (!state.marketJobs.length) {
         await loadMarketJobs();
       }
       renderProfile(state.profile);
       renderResume(state.profile);
+      state.suggestedPrompts = buildSuggestedPrompts();
       renderJobs(state.profile);
-      renderSidebar(state.profile);
+      renderSidebar();
       setTimeout(() => {
         const onboarding = $('voice-onboarding-screen');
         const feed = $('voice-results-screen');
@@ -2546,6 +2795,16 @@
     updateVoiceControlUI();
   });
 
+  $('voice-entry-start-btn').addEventListener('click', async () => {
+    if (state.isProcessing || state.isRecording) return;
+    await enterVoiceSessionFromEntry();
+  });
+
+  $('voice-entry-skip-btn').addEventListener('click', () => {
+    markEntryScreenSeen();
+    enterResultsScreenDirectly();
+  });
+
   $('voice-logout-btn').addEventListener('click', async () => {
     await sb.auth.signOut();
     window.location.href = 'login.html';
@@ -2563,13 +2822,17 @@
     }
     state.session = session;
     state.socialConnections = inferSocialConnections();
-    renderSidebar(state.profile);
+    renderSidebar();
     await loadMarketJobs();
     detectLocationAfterLogin(session.user.id);
+    if (hasSeenEntryScreen()) {
+      onboardingComplete = false;
+      showOnlyScreen('voice-onboarding-screen');
+      await startConversation();
+      return;
+    }
     onboardingComplete = false;
-    $('voice-results-screen').classList.add('voice-hidden');
-    $('voice-onboarding-screen').classList.remove('voice-hidden');
-    await startConversation();
+    showOnlyScreen('voice-entry-screen');
   })();
 </script>
 </body>
