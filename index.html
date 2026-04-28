@@ -269,12 +269,46 @@
       transform: scale(0.94) translateY(12px);
     }
 
-    /* STATS */
-    .stats { background: var(--surface-low); padding: 4rem 2rem; }
-    .stats-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
-    .stat-card { background: var(--surface-lowest); border-radius: 20px; padding: 1.6rem; box-shadow: 0 2px 20px rgba(39,46,66,0.06); }
-    .stat-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.05rem; font-weight: 800; color: var(--on-surface); margin-bottom: 0.5rem; }
-    .stat-label { font-size: 0.9rem; color: var(--on-surface-variant); font-weight: 500; line-height: 1.6; }
+    /* PRODUCT MODULES (replaces STATS) */
+    .product-modules { background: linear-gradient(180deg, rgba(245,247,255,0.7) 0%, rgba(246,246,255,0.9) 100%); padding: 6rem 2rem; }
+    .modules-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.75rem; align-items: stretch; }
+    .module-card {
+      --card-bg: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(248,250,255,0.85));
+      background: var(--card-bg);
+      border-radius: 20px; padding: 2.2rem; position: relative; overflow: visible;
+      box-shadow: 0 18px 50px rgba(31,41,55,0.07), 0 2px 6px rgba(31,41,55,0.04);
+      border: 1px solid rgba(39,46,66,0.04);
+      display: flex; flex-direction: column; gap: 1rem;
+      transition: transform 0.28s cubic-bezier(.2,.9,.24,1), box-shadow 0.28s;
+    }
+    .module-card:hover { transform: translateY(-8px) scale(1.01); box-shadow: 0 28px 80px rgba(31,41,55,0.12); }
+    .module-kicker { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; color: var(--primary); letter-spacing: 0.08em; font-size: 0.78rem; text-transform: uppercase; }
+    .module-title { font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 800; color: var(--on-surface); line-height: 1.05; }
+    .module-desc { color: var(--on-surface-variant); font-size: 1rem; line-height: 1.6; margin-top: 0.25rem; }
+    .module-visual { margin-top: auto; display:flex; align-items:center; gap:1rem; }
+    .module-badge { background: linear-gradient(90deg, rgba(63,255,139,0.12), rgba(0,220,253,0.09)); padding:0.5rem 0.8rem; border-radius:999px; font-weight:700; color:var(--primary); font-size:0.9rem; }
+
+    /* PROCESS STRIP */
+    .process { padding: 5.5rem 2rem; background: transparent; }
+    .process-inner { max-width: 1200px; margin: 0 auto; display:flex; align-items:center; gap:2rem; justify-content:center; flex-direction:column; }
+    .process-rail { width:100%; display:flex; align-items:center; gap:2rem; justify-content:space-between; position:relative; }
+    .process-connector { position:absolute; left:6%; right:6%; height:2px; background: linear-gradient(90deg, rgba(39,46,66,0.06), rgba(39,46,66,0.02)); top:50%; transform:translateY(-50%); z-index:0; border-radius:4px; }
+    .process-step { z-index:1; display:flex; flex-direction:column; align-items:center; gap:1rem; width:28%; text-align:center; }
+    .process-icon { width:84px; height:84px; border-radius:20px; display:flex; align-items:center; justify-content:center; background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(244,248,255,0.9)); box-shadow: 0 12px 30px rgba(39,46,66,0.06); font-size:30px; }
+    .process-title { font-family: 'Fraunces', serif; font-size:1.25rem; font-weight:800; color:var(--on-surface); }
+    .process-sub { color:var(--on-surface-variant); font-size:0.98rem; max-width:300px; }
+
+    /* CATEGORIES (Find Work Your Way) */
+    .categories { padding: 6rem 2rem; background: linear-gradient(180deg, rgba(250,250,255,0.7), rgba(244,248,255,0.6)); }
+    .category-header { text-align:center; margin-bottom:2.25rem; }
+    .category-eyebrow { font-weight:800; color:var(--primary); letter-spacing:0.12em; text-transform:uppercase; font-family:'Plus Jakarta Sans',sans-serif; }
+    .category-title { font-family:'Fraunces',serif; font-size:clamp(1.6rem,3.2vw,2.4rem); font-weight:800; color:var(--on-surface); margin-top:0.5rem; }
+    .category-grid { max-width:1200px; margin:0 auto; display:grid; grid-template-columns: repeat(4, 1fr); gap:1.5rem; }
+    .category-card { background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,249,255,0.96)); border-radius:18px; padding:1.75rem; display:flex; flex-direction:column; gap:1rem; align-items:flex-start; box-shadow:0 14px 40px rgba(31,41,55,0.06); border:1px solid rgba(39,46,66,0.04); transition: transform 0.22s, box-shadow 0.22s; }
+    .category-card:hover { transform: translateY(-8px); box-shadow: 0 30px 80px rgba(31,41,55,0.12); }
+    .category-icon { width:56px; height:56px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:26px; background: linear-gradient(135deg, rgba(63,255,139,0.14), rgba(0,220,253,0.08)); color:var(--primary); }
+    .category-name { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:1.05rem; }
+    .category-desc { color:var(--on-surface-variant); font-size:0.95rem; line-height:1.5; }
 
     /* HOW IT WORKS */
     .how { padding: 6rem 2rem; background: var(--surface-lowest); }
@@ -441,77 +475,99 @@
 </section>
 
 <!-- STATS -->
-<section class="stats">
-  <div class="stats-inner">
-    <div class="stat-card">
-      <div class="stat-title">AI-Powered Matching</div>
-      <div class="stat-label">Matches gigs to your skills instantly</div>
+<section class="product-modules" aria-labelledby="modules-title">
+  <div class="modules-inner">
+    <div class="module-card">
+      <div class="module-kicker">Product Primitive</div>
+      <div class="module-title">Speak Naturally</div>
+      <div class="module-desc">Tell AI what work you want using natural speech — profiles are synthesized into a concise, machine‑readable skill graph that powers matching.</div>
+      <div class="module-visual">
+        <div class="module-badge">Voice · Profile</div>
+      </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-title">Voice Onboarding in Minutes</div>
-      <div class="stat-label">Tell us what you can do and get matched fast</div>
+
+    <div class="module-card">
+      <div class="module-kicker">Matching Engine</div>
+      <div class="module-title">Match Intelligently</div>
+      <div class="module-desc">A relevance-first matching system surfaces opportunities ranked by fit, recency and intent — not just keywords. Prioritizes roles you can win.</div>
+      <div class="module-visual">
+        <div class="module-badge">Signal · Rank</div>
+      </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-title">Remote + Local Opportunities</div>
-      <div class="stat-label">Find flexible work opportunities in one place</div>
+
+    <div class="module-card">
+      <div class="module-kicker">Application Flow</div>
+      <div class="module-title">Apply Effortlessly</div>
+      <div class="module-desc">Automated application flows tailor submissions to each opportunity — reduce friction and convert matches into interviews in minutes.</div>
+      <div class="module-visual">
+        <div class="module-badge">Auto‑apply · Templates</div>
+      </div>
     </div>
   </div>
 </section>
 
 <!-- HOW IT WORKS -->
-<section class="how" id="how-it-works">
-  <div class="section-header">
-    <div class="section-eyebrow">How it works</div>
-    <h2 class="section-title">How It Works</h2>
-  </div>
-  <div class="steps">
-    <div class="step">
-      <div class="step-num">01</div>
-      <div class="step-icon"><span class="material-symbols-outlined">person_edit</span></div>
-      <h3>Tell us what you can do</h3>
-      <p>Voice onboarding creates your profile.</p>
-    </div>
-    <div class="step">
-      <div class="step-num">02</div>
-      <div class="step-icon"><span class="material-symbols-outlined">bolt</span></div>
-      <h3>Get matched to gigs</h3>
-      <p>AI surfaces relevant opportunities.</p>
-    </div>
-    <div class="step">
-      <div class="step-num">03</div>
-      <div class="step-icon"><span class="material-symbols-outlined">rocket_launch</span></div>
-      <h3>Apply faster</h3>
-      <p>Use your matches to pursue work.</p>
+<section class="process" id="how-it-works" aria-label="Product journey">
+  <div class="process-inner">
+    <div class="section-eyebrow">Product Journey</div>
+    <h2 class="section-title" style="margin-bottom:1rem;">Speak → Match → Land</h2>
+    <p style="max-width:780px;color:var(--on-surface-variant);text-align:center;margin-bottom:1.75rem;">A unified system: conversational input becomes structural signals, signals power the ranking engine, and tailored application flows convert matches into outcomes.</p>
+
+    <div class="process-rail" role="list">
+      <div class="process-connector" aria-hidden="true"></div>
+
+      <div class="process-step" role="listitem">
+        <div class="process-icon"><span class="material-symbols-outlined">record_voice_over</span></div>
+        <div class="process-title">Speak</div>
+        <div class="process-sub">Natural language capture converts intent into a compact competency graph.</div>
+      </div>
+
+      <div class="process-step" role="listitem">
+        <div class="process-icon"><span class="material-symbols-outlined">bolt</span></div>
+        <div class="process-title">Match</div>
+        <div class="process-sub">A relevance-first matching layer ranks opportunities by fit and conversion probability.</div>
+      </div>
+
+      <div class="process-step" role="listitem">
+        <div class="process-icon"><span class="material-symbols-outlined">rocket_launch</span></div>
+        <div class="process-title">Land</div>
+        <div class="process-sub">Automated, contextual applications reduce friction and surface the best next actions.</div>
+      </div>
+
     </div>
   </div>
 </section>
 
 <!-- CATEGORIES -->
-<section class="categories">
-  <div class="section-header">
-    <div class="section-eyebrow">Categories</div>
-    <h2 class="section-title">What do you want to earn from?</h2>
+<section class="categories" aria-labelledby="find-work">
+  <div class="category-header">
+    <div class="category-eyebrow">Find Work Your Way</div>
+    <div class="category-title">Opportunity verticals engineered for outcomes</div>
   </div>
-  <div class="cat-grid">
-    <div class="cat-card">
-      <div class="cat-icon"><span class="material-symbols-outlined">videocam</span></div>
-      <div class="cat-title">Content</div>
-      <div class="cat-desc">Photos, videos, and social media tasks for local businesses.</div>
+
+  <div class="category-grid">
+    <div class="category-card">
+      <div class="category-icon"><span class="material-symbols-outlined">videocam</span></div>
+      <div class="category-name">Content</div>
+      <div class="category-desc">Creative assignments that pay for your storytelling — short-form video, photography and assets optimized for local brands.</div>
     </div>
-    <div class="cat-card">
-      <div class="cat-icon"><span class="material-symbols-outlined">wifi</span></div>
-      <div class="cat-title">Remote</div>
-      <div class="cat-desc">Translate, data entry, and digital tasks from anywhere.</div>
+
+    <div class="category-card">
+      <div class="category-icon"><span class="material-symbols-outlined">wifi</span></div>
+      <div class="category-name">Remote</div>
+      <div class="category-desc">Digital-first gigs that fit any timezone — localization, transcription, and lightweight product work you can do anywhere.</div>
     </div>
-    <div class="cat-card">
-      <div class="cat-icon"><span class="material-symbols-outlined">location_on</span></div>
-      <div class="cat-title">Local</div>
-      <div class="cat-desc">Deliveries, mystery shopping, and pop-up events near you.</div>
+
+    <div class="category-card">
+      <div class="category-icon"><span class="material-symbols-outlined">location_on</span></div>
+      <div class="category-name">Local</div>
+      <div class="category-desc">High-conversion local shifts and on-site tasks curated by proximity and immediate demand.</div>
     </div>
-    <div class="cat-card">
-      <div class="cat-icon"><span class="material-symbols-outlined">work</span></div>
-      <div class="cat-title">Freelance</div>
-      <div class="cat-desc">Project-based opportunities for flexible schedules.</div>
+
+    <div class="category-card">
+      <div class="category-icon"><span class="material-symbols-outlined">work</span></div>
+      <div class="category-name">Freelance</div>
+      <div class="category-desc">Project-based, portfolio-forward roles for independent professionals and specialists.</div>
     </div>
   </div>
 </section>
