@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GigGrab - Frontend Web Dev Jobs with Autofill</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      color: white;
+      margin-bottom: 50px;
+    }
+    h1 { font-size: 2.5em; margin-bottom: 10px; }
+    .tagline { font-size: 1.1em; opacity: 0.9; }
+    .jobs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    .job-card {
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+    .job-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+    }
+    .job-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+    }
+    .job-title { font-size: 1.3em; font-weight: bold; margin-bottom: 5px; }
+    .job-company { opacity: 0.9; font-size: 0.95em; }
+    .job-body {
+      padding: 20px;
+    }
+    .job-meta {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.9em;
+      color: #666;
+    }
+    .job-description {
+      color: #555;
+      line-height: 1.5;
+      margin-bottom: 15px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .job-skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+    .skill-tag {
+      background: #f0f0f0;
+      color: #667eea;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      font-weight: 500;
+    }
+    .job-actions {
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.95em;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-apply {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .btn-apply:hover { opacity: 0.9; }
+    .btn-apply:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-details {
+      background: #f0f0f0;
+      color: #667eea;
+    }
+    .btn-details:hover { background: #e0e0e0; }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: white;
+      margin: auto;
+      padding: 30px;
+      border-radius: 8px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .close-btn {
+      float: right;
+      font-size: 1.5em;
+      cursor: pointer;
+      color: #666;
+    }
+    .close-btn:hover { color: #333; }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 5px;
+      color: #333;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 0.95em;
+      font-family: inherit;
+    }
+    textarea { min-height: 80px; resize: vertical; }
+    .status-message {
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      display: none;
+    }
+    .status-message.show { display: block; }
+    .status-message.loading { background: #e3f2fd; color: #1976d2; }
+    .status-message.success { background: #e8f5e9; color: #2e7d32; }
+    .status-message.error { background: #ffebee; color: #c62828; }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: white;
+    }
+    .spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🚀 GigGrab Job Board</h1>
+      <p class="tagline">Frontend Web Dev Roles with AI-Powered Auto-Apply</p>
+    </header>
+
+    <div id="jobs-container" class="jobs-grid"></div>
+    <div id="loading" class="loading" style="display: none;">
+      <div class="spinner"></div>
+      <p style="margin-top: 15px;">Loading jobs...</p>
+    </div>
+  </div>
+
+  <!-- Job Details Modal -->
+  <div id="detailsModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeModal('detailsModal')">&times;</span>
+      <h2 id="modalTitle"></h2>
+      <div id="modalBody"></div>
+      <button class="btn-apply" onclick="openApplyForm()" style="width: 100%; padding: 12px; margin-top: 20px;">Apply Now</button>
+    </div>
+  </div>
+
+  <!-- Auto-Apply Form Modal -->
+  <div id="applyModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeModal('applyModal')">&times;</span>
+      <h2>Apply to Job</h2>
+      <div id="applyStatus" class="status-message"></div>
+      <form id="applyForm" onsubmit="submitApplication(event)">
+        <div class="form-group">
+          <label>First Name</label>
+          <input type="text" id="firstName" required />
+        </div>
+        <div class="form-group">
+          <label>Last Name</label>
+          <input type="text" id="lastName" required />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="email" required />
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" id="phone" />
+        </div>
+        <div class="form-group">
+          <label>Resume URL</label>
+          <input type="url" id="resumeUrl" placeholder="https://example.com/resume.pdf" />
+        </div>
+        <div class="form-group">
+          <label>JWT Token (Supabase Auth)</label>
+          <input type="password" id="jwtToken" placeholder="ey..." required />
+        </div>
+        <button type="submit" class="btn-apply" style="width: 100%; padding: 12px;">🎯 Submit Application</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let allJobs = [];
+    let currentJob = null;
+
+    // Fetch jobs from the API
+    async function loadJobs() {
+      document.getElementById('loading').style.display = 'block';
+      try {
+        const response = await fetch('/api/jobs?category=engineering&type=remote&limit=20');
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
+        
+        const data = await response.json();
+        allJobs = data.jobs || data || [];
+        
+        // Filter for frontend roles if they exist
+        const frontendJobs = allJobs.filter(job => {
+          const title = (job.title || '').toLowerCase();
+          const desc = (job.description || '').toLowerCase();
+          return (
+            title.includes('frontend') ||
+            title.includes('react') ||
+            title.includes('web') ||
+            title.includes('javascript') ||
+            title.includes('typescript') ||
+            desc.includes('frontend') ||
+            desc.includes('react')
+          );
+        });
+
+        if (frontendJobs.length > 0) {
+          allJobs = frontendJobs;
+        }
+
+        renderJobs(allJobs);
+      } catch (err) {
+        console.error('Error loading jobs:', err);
+        document.getElementById('jobs-container').innerHTML = `
+          <div style="grid-column: 1/-1; text-align: center; color: white; padding: 40px;">
+            <p>⚠️ Could not load jobs</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">${err.message}</p>
+          </div>
+        `;
+      } finally {
+        document.getElementById('loading').style.display = 'none';
+      }
+    }
+
+    // Render jobs to the grid
+    function renderJobs(jobs) {
+      const container = document.getElementById('jobs-container');
+      if (jobs.length === 0) {
+        container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: white; padding: 40px;">No jobs found</div>';
+        return;
+      }
+
+      container.innerHTML = jobs.map(job => `
+        <div class="job-card">
+          <div class="job-header">
+            <div class="job-title">${job.title}</div>
+            <div class="job-company">${job.source || 'Job Board'}</div>
+          </div>
+          <div class="job-body">
+            <div class="job-meta">
+              <div class="meta-item">📍 ${job.location || 'Remote'}</div>
+              <div class="meta-item">💼 ${job.job_type || 'Full-time'}</div>
+            </div>
+            <div class="job-description">${job.description || 'No description provided'}</div>
+            <div class="job-skills">
+              ${(job.skills || []).slice(0, 3).map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+            </div>
+            <div class="job-actions">
+              <button class="btn-apply" onclick="setCurrentJob(${JSON.stringify(job).replace(/"/g, '&quot;')}); openApplyForm();">Apply Now</button>
+              <button class="btn-details" onclick="showDetails(${JSON.stringify(job).replace(/"/g, '&quot;')})">Details</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Show job details
+    function showDetails(job) {
+      currentJob = job;
+      document.getElementById('modalTitle').textContent = job.title;
+      document.getElementById('modalBody').innerHTML = `
+        <p><strong>Company:</strong> ${job.source || 'N/A'}</p>
+        <p><strong>Location:</strong> ${job.location || 'Remote'}</p>
+        <p><strong>Type:</strong> ${job.job_type || 'Full-time'}</p>
+        <p><strong>Description:</strong></p>
+        <p style="color: #666; line-height: 1.6;">${job.description || 'No description'}</p>
+        ${job.source_url ? `<p><strong>Link:</strong> <a href="${job.source_url}" target="_blank" style="color: #667eea;">${job.source_url}</a></p>` : ''}
+      `;
+      openModal('detailsModal');
+    }
+
+    // Set current job and open apply form
+    function setCurrentJob(job) {
+      currentJob = job;
+    }
+
+    function openApplyForm() {
+      if (!currentJob) return;
+      closeModal('detailsModal');
+      openModal('applyModal');
+    }
+
+    // Submit application
+    async function submitApplication(event) {
+      event.preventDefault();
+      
+      const statusDiv = document.getElementById('applyStatus');
+      const jwtToken = document.getElementById('jwtToken').value;
+
+      if (!currentJob || !currentJob.id) {
+        showStatus('error', 'No job selected');
+        return;
+      }
+
+      const payload = {
+        jobId: currentJob.id,
+        jobUrl: currentJob.source_url || 'https://example.com',
+        company: currentJob.source || currentJob.title.split(' ')[0],
+        roleTitle: currentJob.title,
+        domain: currentJob.source || 'unknown',
+        formAnswers: {
+          firstName: document.getElementById('firstName').value,
+          lastName: document.getElementById('lastName').value,
+          email: document.getElementById('email').value,
+          phone: document.getElementById('phone').value,
+        },
+        resumeUrl: document.getElementById('resumeUrl').value || 'https://example.com/resume.pdf',
+        scheduledDelayMs: 5000,
+      };
+
+      showStatus('loading', 'Submitting application...');
+
+      try {
+        const response = await fetch('/api/autofill', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${jwtToken}`,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || `HTTP ${response.status}`);
+        }
+
+        showStatus('success', `✅ Application submitted!\n\nJob ID: ${data.bullmqJobId}\nStatus: ${data.status}`);
+        setTimeout(() => closeModal('applyModal'), 2000);
+      } catch (err) {
+        showStatus('error', `❌ ${err.message}`);
+      }
+    }
+
+    function showStatus(type, message) {
+      const statusDiv = document.getElementById('applyStatus');
+      statusDiv.className = `status-message show ${type}`;
+      statusDiv.innerHTML = message.replace(/\n/g, '<br>');
+    }
+
+    // Modal helpers
+    function openModal(id) {
+      document.getElementById(id).classList.add('active');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+      document.getElementById('applyStatus').classList.remove('show');
+      document.getElementById('applyForm').reset();
+    }
+
+    // Load jobs on page load
+    loadJobs();
+  </script>
+</body>
+</html>
