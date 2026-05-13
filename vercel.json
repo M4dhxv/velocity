@@ -3,6 +3,9 @@
     "api/onboard/*.js": {
       "maxDuration": 30
     },
+    "api/autofill/*.js": {
+      "maxDuration": 15
+    },
     "api/jobs/*.js": {
       "maxDuration": 300
     }
