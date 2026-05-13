@@ -24,9 +24,24 @@ import {
 
 // Initialize clients
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+const supabaseKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+
+if (!supabaseKey) {
+  throw new Error(
+    'Missing SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_ANON_KEY fallback)'
+  );
+}
+
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.warn(
+    '[STARTUP] SUPABASE_SERVICE_ROLE_KEY not set; falling back to SUPABASE_ANON_KEY. Some writes may be blocked by RLS.'
+  );
+}
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  supabaseKey
 );
 
 const WORKER_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || '5');
