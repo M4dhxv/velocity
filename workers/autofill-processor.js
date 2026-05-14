@@ -249,7 +249,57 @@ async function executePlaywrightFill(jobData) {
       await page.waitForTimeout(5000); // Extra wait for React/JS to render
     }
 
-    // Debug: log all visible inputs
+    // Try clicking an Apply button/link which may open the real application in a new tab
+    const applySelectors = [
+      'button:has-text("Apply")',
+      'a:has-text("Apply")',
+      'button:has-text("Apply now")',
+      'a:has-text("Apply now")',
+      'a[target="_blank"]',
+      'a[href*="apply"]',
+      'button[id*="apply"]',
+      'input[type="submit"][value*="Apply"]',
+      '[data-apply]'
+    ];
+
+    const ctx = page.context();
+    let openedPage = null;
+    for (const sel of applySelectors) {
+      try {
+        const el = await page.$(sel);
+        if (!el) continue;
+        console.log(`[${jobId}] Found apply element: ${sel} - attempting click`);
+
+        const newPagePromise = ctx.waitForEvent('page');
+
+        // click and give JS a moment to open a new tab or navigate
+        await el.click({ button: 'left', delay: 100 }).catch(err => {
+          console.warn(`[${jobId}] Click failed for ${sel}: ${err.message}`);
+        });
+
+        // wait up to 5s for a new page; if none, continue on same page
+        openedPage = await Promise.race([
+          newPagePromise,
+          new Promise(resolve => setTimeout(() => resolve(null), 5000))
+        ]).catch(() => null);
+
+        // If no new page, check if we navigated in the same page
+        const urlAfter = page.url();
+        console.log(`[${jobId}] URL after clicking apply candidate (${sel}): ${urlAfter}`);
+
+        if (openedPage) {
+          console.log(`[${jobId}] New page opened by apply click`);
+          await openedPage.waitForLoadState('networkidle').catch(() => {});
+          page = openedPage;
+        }
+
+        break;
+      } catch (err) {
+        console.warn(`[${jobId}] Error while handling apply selector ${sel}: ${err.message}`);
+      }
+    }
+
+    // Debug: log all visible inputs on the current page (could be the new tab)
     const inputCount = await page.$$eval('input, textarea, select', els => els.length);
     console.log(`[${jobId}] Found ${inputCount} form inputs on page`);
 
