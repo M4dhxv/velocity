@@ -1,0 +1,41 @@
+[
+  {
+    "title": "1",
+    "description": "1 role",
+    "skills": [],
+    "category": "restaurant",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Austin, TX",
+    "source": "starbucks",
+    "source_id": "8765b4bebb52429b914f862d",
+    "source_url": "https://careers.starbucks.com/",
+    "client_verified": true,
+    "posted_at": "2026-04-26T17:31:11.648485+00:00"
+  },
+  {
+    "title": "Baristas &amp; Coffeehouse Leadership",
+    "description": "Baristas &amp; Coffeehouse Leadership",
+    "skills": [
+      "leadership",
+      "barista"
+    ],
+    "category": "management",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Austin, TX",
+    "source": "starbucks",
+    "source_id": "6d2ca79609461f6365427f2b",
+    "source_url": "https://careers.starbucks.com/",
+    "client_verified": true,
+    "posted_at": "2026-04-26T17:31:11.648616+00:00"
+  }
+]

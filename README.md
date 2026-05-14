@@ -174,3 +174,31 @@ Local routes are defined in [server.js](server.js).
 ## Quick Test
 
 Use documentation in [docs/VOICE_ONBOARDING_API.md](docs/VOICE_ONBOARDING_API.md).
+
+## Restaurant Scraper Framework (Python)
+
+Reusable multi-brand ingestion is available via:
+
+- `scrape_jobs.py`
+- `scrapers/base_scraper.py`
+- `scrapers/parser_registry.py`
+- `scrapers/brands/*.py`
+
+Install dependencies:
+
+```bash
+python3 -m pip install -r requirements-scrapers.txt
+```
+
+Example:
+
+```bash
+python3 scrape_jobs.py --brand chipotle --location "Austin, TX"
+python3 scrape_jobs.py --brand mchire --brand starbucks --brand chipotle --brand subway --brand tacobell --location "Austin, TX" --combined
+```
+
+Output files:
+
+- `data/<brand>_<location>.json`
+- `data/combined_jobs.json` (multi-brand / `--combined`)
+- `data/parser_coverage_report.json`

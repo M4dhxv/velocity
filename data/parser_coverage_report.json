@@ -1,0 +1,19 @@
+[
+  {
+    "brand": "burger_king",
+    "source_url": "https://careers.bk.com/search?location=40.71453,-74.00712&address=New%20York,%20New%20York,%20USA&locationId=here:cm:namedplace:21019301",
+    "embedded_json_success": false,
+    "embedded_json_hits": 0,
+    "brand_specific_parser_usage": true,
+    "detected_parser_type": "api_or_xhr",
+    "parser_name": "burger_king",
+    "used_fallback": false,
+    "selector_failures": [],
+    "warnings": [
+      "api_probe_failed: https://careers.bk.com/api/ (404 Client Error: Not Found for url: https://careers.bk.com/api/)"
+    ],
+    "api_endpoints_probed": [
+      "https://careers.bk.com/api/"
+    ]
+  }
+]

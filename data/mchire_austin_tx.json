@@ -1,0 +1,380 @@
+[
+  {
+    "title": "Maintenance",
+    "description": "Maintenance role",
+    "skills": [],
+    "category": "restaurant",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Austin, TX",
+    "source": "mchire",
+    "source_id": "P8-160916-0",
+    "source_url": "https://jobs.mchire.com/jobs?location_type=2&location_name=Austin%2C+TX",
+    "client_verified": true,
+    "posted_at": "2026-04-26T17:31:05.384435+00:00"
+  },
+  {
+    "title": "Shift Manager",
+    "description": "Shift Manager role",
+    "skills": [
+      "leadership"
+    ],
+    "category": "management",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Austin, TX",
+    "source": "mchire",
+    "source_id": "P8-160940-0",
+    "source_url": "https://jobs.mchire.com/jobs?location_type=2&location_name=Austin%2C+TX",
+    "client_verified": true,
+    "posted_at": "2026-04-26T17:31:05.384515+00:00"
+  },
+  {
+    "title": "Crew Team Member",
+    "description": "Crew Team Member role",
+    "skills": [
+      "teamwork"
+    ],
+    "category": "restaurant",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Austin, TX",
+    "source": "mchire",
+    "source_id": "P8-160910-0",
+    "source_url": "https://jobs.mchire.com/jobs?location_type=2&location_name=Austin%2C+TX",
+    "client_verified": true,
+    "posted_at": "2026-04-26T17:31:05.384576+00:00"
+  },
+  {
+    "title": "Department Manager",
+    "description": "Department Manager role",
+    "skills": [
+      "leadership"
+    ],
+    "category": "management",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Austin, TX",
+    "source": "mchire",
+    "source_id": "P8-160928-0",
+    "source_url": "https://jobs.mchire.com/jobs?location_type=2&location_name=Austin%2C+TX",
+    "client_verified": true,
+    "posted_at": "2026-04-26T17:31:05.384617+00:00"
+  },
+  {
+    "title": "Shift Manager",
+    "description": "Shift Manager role",
+    "skills": [
+      "leadership"
+    ],
+    "category": "management",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Austin, TX",
+    "source": "mchire",
+    "source_id": "P8-160941-0",
+    "source_url": "https://jobs.mchire.com/jobs?location_type=2&location_name=Austin%2C+TX",
+    "client_verified": true,
+    "posted_at": "2026-04-26T17:31:05.384657+00:00"
+  },
+  {
+    "title": "Crew Team Member",
+    "description": "Crew Team Member role",
+    "skills": [
+      "teamwork"
+    ],
+    "category": "restaurant",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Austin, TX",
+    "source": "mchire",
+    "source_id": "P8-160911-0",
+    "source_url": "https://jobs.mchire.com/jobs?location_type=2&location_name=Austin%2C+TX",
+    "client_verified": true,
+    "posted_at": "2026-04-26T17:31:05.384696+00:00"
+  },
+  {
+    "title": "Department Manager",
+    "description": "Department Manager role",
+    "skills": [
+      "leadership"
+    ],
+    "category": "management",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Austin, TX",
+    "source": "mchire",
+    "source_id": "P8-160929-0",
+    "source_url": "https://jobs.mchire.com/jobs?location_type=2&location_name=Austin%2C+TX",
+    "client_verified": true,
+    "posted_at": "2026-04-26T17:31:05.384735+00:00"
+  },
+  {
+    "title": "Human Resource Manager",
+    "description": "Human Resource Manager role",
+    "skills": [
+      "leadership"
+    ],
+    "category": "management",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Austin, TX",
+    "source": "mchire",
+    "source_id": "P8-119409-0",
+    "source_url": "https://jobs.mchire.com/jobs?location_type=2&location_name=Austin%2C+TX",
+    "client_verified": true,
+    "posted_at": "2026-04-26T17:31:05.384775+00:00"
+  },
+  {
+    "title": "General Manager",
+    "description": "General Manager role",
+    "skills": [
+      "leadership"
+    ],
+    "category": "management",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Austin, TX",
+    "source": "mchire",
+    "source_id": "P8-54511-0",
+    "source_url": "https://jobs.mchire.com/jobs?location_type=2&location_name=Austin%2C+TX",
+    "client_verified": true,
+    "posted_at": "2026-04-26T17:31:05.384813+00:00"
+  },
+  {
+    "title": "Crew Team Member",
+    "description": "Crew Team Member role",
+    "skills": [
+      "teamwork"
+    ],
+    "category": "restaurant",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Austin, TX",
+    "source": "mchire",
+    "source_id": "P8-54505-0",
+    "source_url": "https://jobs.mchire.com/jobs?location_type=2&location_name=Austin%2C+TX",
+    "client_verified": true,
+    "posted_at": "2026-04-26T17:31:05.384851+00:00"
+  },
+  {
+    "title": "Shift Manager",
+    "description": "Shift Manager",
+    "skills": [
+      "leadership"
+    ],
+    "category": "management",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Austin, TX",
+    "source": "mchire",
+    "source_id": "ba948bd352394428ddfe9805",
+    "source_url": "https://www.mchire.com/co/McDonalds451/Job?job_id=PDX_MC_31374EBB-45C8-445E-8727-D1918D08E03D_79910",
+    "client_verified": true,
+    "posted_at": "2026-04-26T17:31:05.385538+00:00"
+  },
+  {
+    "title": "Crew Team Member",
+    "description": "Crew Team Member",
+    "skills": [
+      "teamwork"
+    ],
+    "category": "restaurant",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Austin, TX",
+    "source": "mchire",
+    "source_id": "9445607d55f09ff2fd050d48",
+    "source_url": "https://www.mchire.com/co/McDonalds451/Job?job_id=PDX_MC_46027DD8-5B02-4A0D-8DD8-961AE785DCD1_79910",
+    "client_verified": true,
+    "posted_at": "2026-04-26T17:31:05.385570+00:00"
+  },
+  {
+    "title": "Department Manager",
+    "description": "Department Manager",
+    "skills": [
+      "leadership"
+    ],
+    "category": "management",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Austin, TX",
+    "source": "mchire",
+    "source_id": "90e2e21d04bda796d11c587e",
+    "source_url": "https://www.mchire.com/co/McDonalds451/Job?job_id=PDX_MC_F4FDACAC-50D2-4A92-87B1-B783DE94912A_79910",
+    "client_verified": true,
+    "posted_at": "2026-04-26T17:31:05.385603+00:00"
+  },
+  {
+    "title": "Shift Manager",
+    "description": "Shift Manager",
+    "skills": [
+      "leadership"
+    ],
+    "category": "management",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Austin, TX",
+    "source": "mchire",
+    "source_id": "b8beaa63193d57ecfd69729b",
+    "source_url": "https://www.mchire.com/co/McDonalds451/Job?job_id=PDX_MC_31374EBB-45C8-445E-8727-D1918D08E03D_79911",
+    "client_verified": true,
+    "posted_at": "2026-04-26T17:31:05.385633+00:00"
+  },
+  {
+    "title": "Crew Team Member",
+    "description": "Crew Team Member",
+    "skills": [
+      "teamwork"
+    ],
+    "category": "restaurant",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Austin, TX",
+    "source": "mchire",
+    "source_id": "1d61d9a4ddb439a36570f7cb",
+    "source_url": "https://www.mchire.com/co/McDonalds451/Job?job_id=PDX_MC_46027DD8-5B02-4A0D-8DD8-961AE785DCD1_79911",
+    "client_verified": true,
+    "posted_at": "2026-04-26T17:31:05.385664+00:00"
+  },
+  {
+    "title": "Department Manager",
+    "description": "Department Manager",
+    "skills": [
+      "leadership"
+    ],
+    "category": "management",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Austin, TX",
+    "source": "mchire",
+    "source_id": "afb8172258108efcf6e21070",
+    "source_url": "https://www.mchire.com/co/McDonalds451/Job?job_id=PDX_MC_F4FDACAC-50D2-4A92-87B1-B783DE94912A_79911",
+    "client_verified": true,
+    "posted_at": "2026-04-26T17:31:05.385694+00:00"
+  },
+  {
+    "title": "Human Resource Manager",
+    "description": "Human Resource Manager",
+    "skills": [
+      "leadership"
+    ],
+    "category": "management",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Austin, TX",
+    "source": "mchire",
+    "source_id": "65d377fb5f8019bc350ffac6",
+    "source_url": "https://www.mchire.com/co/McDonalds2012/Job?job_id=PDX_MC_CC4B919D-FA40-46A3-A2AF-F31D2DDF9944_18736",
+    "client_verified": true,
+    "posted_at": "2026-04-26T17:31:05.385727+00:00"
+  },
+  {
+    "title": "General Manager",
+    "description": "General Manager",
+    "skills": [
+      "leadership"
+    ],
+    "category": "management",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Austin, TX",
+    "source": "mchire",
+    "source_id": "63b3df15f5121e871b8f7e3d",
+    "source_url": "https://www.mchire.com/co/McDonalds2012/Job?job_id=PDX_MC_0DCAA280-1570-4129-8C3B-4126779DB3D7_18736",
+    "client_verified": true,
+    "posted_at": "2026-04-26T17:31:05.385757+00:00"
+  },
+  {
+    "title": "Crew Team Member",
+    "description": "Crew Team Member",
+    "skills": [
+      "teamwork"
+    ],
+    "category": "restaurant",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Austin, TX",
+    "source": "mchire",
+    "source_id": "4269b14604c63e4729c998ea",
+    "source_url": "https://www.mchire.com/co/McDonalds2012/Job?job_id=PDX_MC_18DE34F6-9187-43F2-ABFA-FE4CAA0DE779_18736",
+    "client_verified": true,
+    "posted_at": "2026-04-26T17:31:05.385799+00:00"
+  }
+]

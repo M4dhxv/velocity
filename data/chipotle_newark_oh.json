@@ -1,0 +1,22 @@
+[
+  {
+    "title": "Crew Member",
+    "description": "Crew Member",
+    "skills": [
+      "teamwork"
+    ],
+    "category": "restaurant",
+    "type": "local",
+    "job_type": "unspecified",
+    "budget": null,
+    "hourly_rate_min": null,
+    "hourly_rate_max": null,
+    "currency": "USD",
+    "location": "Newark, OH",
+    "source": "chipotle",
+    "source_id": "4a2bd6351e6fbc1773f38c4f",
+    "source_url": "https://jobs.chipotle.com/search-jobs/Newark%2C%20OH/282/4/6252001-5165418-5160740-5164466/40x05812/-82x40126/50/2",
+    "client_verified": true,
+    "posted_at": "2026-04-27T13:29:50.128321+00:00"
+  }
+]

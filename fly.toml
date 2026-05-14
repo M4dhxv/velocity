@@ -1,0 +1,23 @@
+app = "giggrab-autofill-worker"
+primary_region = "sjc"
+
+[env]
+  SUPABASE_URL = "https://xgqzuxosnypqohkqmkit.supabase.co"
+  SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhncXp1eG9zbnlwcW9oa3Fta2l0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjYwMjUxMiwiZXhwIjoyMDkyMTc4NTEyfQ.s_uaAKHgadAwHSZjcEpClQKMmfvTwc6iGomIx_oqKbg"
+  REDIS_URL = "redis://default:PASSWORD@HOST:6379"
+  WORKER_CONCURRENCY = "3"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[processes]
+  worker = "node workers/autofill-processor.js"
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 6379
+  processes = ["worker"]
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+  scale = { min = 1, max = 1, hard_limit = 2 }
