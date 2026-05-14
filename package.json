@@ -9,7 +9,7 @@
     "dev:vercel": "vercel dev",
     "ingest:jobs": "node scripts/ingest-jobs.js",
     "worker:autofill": "node workers/autofill-processor.js",
-    "heroku-postbuild": "npx playwright install chromium"
+    "heroku-postbuild": "PLAYWRIGHT_BROWSERS_PATH=0 npx playwright install chromium"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
