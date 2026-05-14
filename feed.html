@@ -1395,10 +1395,41 @@
 
   function setStatus(text, tone = 'default') {
     const el = $('voice-status');
-    el.textContent = text;
-    el.className = 'voice-status';
-    if (tone === 'processing') el.classList.add('processing');
-    if (tone === 'success') el.classList.add('success');
+    if (el) {
+      el.textContent = text;
+      el.className = 'voice-status';
+      if (tone === 'processing') el.classList.add('processing');
+      if (tone === 'success') el.classList.add('success');
+    }
+
+    // Always-visible fallback banner so errors are never hidden.
+    let banner = $('giggrab-debug-banner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'giggrab-debug-banner';
+      banner.style.position = 'fixed';
+      banner.style.left = '12px';
+      banner.style.right = '12px';
+      banner.style.bottom = '12px';
+      banner.style.zIndex = '99999';
+      banner.style.padding = '10px 12px';
+      banner.style.borderRadius = '10px';
+      banner.style.fontSize = '13px';
+      banner.style.fontWeight = '700';
+      banner.style.boxShadow = '0 8px 20px rgba(0,0,0,.18)';
+      banner.style.background = '#102038';
+      banner.style.color = '#fff';
+      banner.style.opacity = '0';
+      banner.style.transition = 'opacity .2s ease';
+      document.body.appendChild(banner);
+    }
+    banner.textContent = String(text || '');
+    banner.style.background = tone === 'success' ? '#0a6b34' : tone === 'processing' ? '#6b1a1a' : '#102038';
+    banner.style.opacity = '1';
+    clearTimeout(window.__giggrabBannerTimer);
+    window.__giggrabBannerTimer = setTimeout(() => {
+      if (banner) banner.style.opacity = '0';
+    }, 7000);
 
     if (tone === 'success') {
       setAssistantState('success');
@@ -2069,6 +2100,8 @@
     } catch (error) {
       console.error('autofill_enqueue_failed', error);
       setStatus(`Autofill enqueue failed: ${error?.message || 'unknown error'}`, 'processing');
+      // Hard fallback for critical debugging visibility.
+      window.alert(`Autofill enqueue failed:\n${error?.message || 'unknown error'}`);
       if (buttonEl) {
         buttonEl.disabled = false;
         buttonEl.textContent = previousLabel;
