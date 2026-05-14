@@ -23,8 +23,12 @@ import {
 } from '../lib/rate-limiter.js';
 
 // Initialize clients
-const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+const redis = new Redis(redisUrl, {
   maxRetriesPerRequest: null,
+  ...(redisUrl.startsWith('rediss://')
+    ? { tls: { rejectUnauthorized: false } }
+    : {}),
 });
 const supabaseKey =
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
