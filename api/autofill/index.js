@@ -12,7 +12,6 @@
 import { createClient } from '@supabase/supabase-js';
 import {
   enqueueAutofillJob,
-  isJobNew,
   generateApplyDelay,
   getAutofillJobStatus,
   cancelAutofillJob,
@@ -97,19 +96,7 @@ async function handleEnqueue(req, res, userId) {
 
   // Credits temporarily bypassed for debugging stability.
 
-  // Check for duplicate (within 24 hours)
-  const isNew = await isJobNew({
-    userId,
-    company,
-    roleTitle,
-    windowHours: 24,
-  });
-
-  if (!isNew) {
-    return res.status(409).json({
-      error: 'Already applied to this role at this company in the last 24 hours',
-    });
-  }
+  // Dedupe check intentionally disabled for debugging so repeated applies are allowed.
 
   try {
     let resolvedJobId = String(jobId).trim();

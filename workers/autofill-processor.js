@@ -223,6 +223,7 @@ async function executePlaywrightFill(jobData) {
 
   let browser;
   let page;
+  let context;
 
   try {
     console.log(`[${jobId}] Launching Playwright for ${jobUrl}`);
@@ -230,13 +231,12 @@ async function executePlaywrightFill(jobData) {
       headless,
       args: ['--disable-blink-features=AutomationControlled'],
     });
-    
-    page = await browser.newPage();
-    
-    // Set user agent to avoid detection
-    await page.setUserAgent(
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
-    );
+
+    // Set user agent at browser-context level (page.setUserAgent is not available in this runtime).
+    context = await browser.newContext({
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+    });
+    page = await context.newPage();
 
     // Navigate to job URL
     console.log(`[${jobId}] Navigating to ${jobUrl}`);
@@ -266,7 +266,7 @@ async function executePlaywrightFill(jobData) {
       '[data-apply]'
     ];
 
-    const ctx = page.context();
+    const ctx = context || page.context();
     let openedPage = null;
     for (const sel of applySelectors) {
       try {
