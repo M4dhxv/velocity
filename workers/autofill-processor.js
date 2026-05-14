@@ -12,6 +12,7 @@ import { Worker } from 'bullmq';
 import Redis from 'ioredis';
 import { createClient } from '@supabase/supabase-js';
 import { chromium } from 'playwright';
+import fs from 'node:fs/promises';
 import {
   calculateBackoffWithJitter,
   pauseForHITL,
@@ -107,6 +108,7 @@ const createAutofillWorker = () => {
               executed_at: new Date().toISOString(),
               result_screenshot_url: fillResult.screenshotUrl,
               result_video_url: fillResult.videoUrl,
+              hitl_artifacts: fillResult.artifacts || {},
             })
             .eq('bullmq_job_id', job.id);
 
@@ -238,6 +240,8 @@ async function executePlaywrightFill(jobData) {
     // Navigate to job URL
     console.log(`[${jobId}] Navigating to ${jobUrl}`);
     await page.goto(jobUrl, { waitUntil: 'networkidle', timeout: 30000 });
+    const beforePath = `/tmp/${jobId}-before-fill.png`;
+    await page.screenshot({ path: beforePath, fullPage: true });
 
     // Wait for form to load - try multiple selectors for different ATS platforms
     try {
@@ -303,7 +307,7 @@ async function executePlaywrightFill(jobData) {
     console.log(`[${jobId}] Found ${inputCount} form inputs on page`);
 
     // Fill form fields
-    await fillFormFields(page, jobId, formAnswers);
+    const fillAudit = await fillFormFields(page, jobId, formAnswers);
 
     // Upload resume if provided
     if (resumeUrl) {
@@ -312,27 +316,60 @@ async function executePlaywrightFill(jobData) {
 
     // Find and click submit button
     const submitButton = await findSubmitButton(page);
+    let submitAttempted = false;
+    let submitDetected = false;
     if (submitButton) {
       console.log(`[${jobId}] Clicking submit button`);
+      submitAttempted = true;
       await submitButton.click();
       
       // Wait for navigation or confirmation
       await page.waitForNavigation({ waitUntil: 'networkidle', timeout: 10000 }).catch(() => {
         console.log(`[${jobId}] No navigation after submit (expected on some ATS)`);
       });
+
+      const pageText = (await page.textContent('body').catch(() => '') || '').toLowerCase();
+      submitDetected =
+        pageText.includes('thank you') ||
+        pageText.includes('application received') ||
+        pageText.includes('successfully submitted') ||
+        pageText.includes('we have received your application');
     } else {
       console.warn(`[${jobId}] No submit button found`);
     }
 
     // Capture screenshot
-    const screenshotPath = `/tmp/${jobId}-screenshot.png`;
-    await page.screenshot({ path: screenshotPath, fullPage: true });
-    console.log(`[${jobId}] Screenshot saved to ${screenshotPath}`);
+    const afterPath = `/tmp/${jobId}-after-submit.png`;
+    await page.screenshot({ path: afterPath, fullPage: true });
+    console.log(`[${jobId}] Screenshot saved to ${afterPath}`);
+
+    const beforeBase64 = await fs.readFile(beforePath, { encoding: 'base64' }).catch(() => null);
+    const afterBase64 = await fs.readFile(afterPath, { encoding: 'base64' }).catch(() => null);
+
+    const artifacts = {
+      timestamps: { completedAt: new Date().toISOString() },
+      page: {
+        finalUrl: page.url(),
+        title: await page.title().catch(() => ''),
+      },
+      submit: {
+        attempted: submitAttempted,
+        confirmationDetected: submitDetected,
+      },
+      fillAudit,
+      screenshots: {
+        beforeFillPath: beforePath,
+        afterSubmitPath: afterPath,
+        beforeFillBase64: beforeBase64,
+        afterSubmitBase64: afterBase64,
+      },
+    };
 
     // Return success with mock S3 URLs (in production, upload to S3)
     return {
-      screenshotUrl: `s3://giggrab-autofill/${jobId}/screenshot.png`,
+      screenshotUrl: `local:///tmp/${jobId}-after-submit.png`,
       videoUrl: null, // Video recording disabled for performance
+      artifacts,
     };
 
   } catch (err) {
@@ -359,6 +396,7 @@ async function fillFormFields(page, jobId, formAnswers) {
   console.log(`[${jobId}] Total inputs/textareas/selects found: ${allInputs.length}`);
 
   let filledCount = 0;
+  const filledFields = [];
 
   // Filter to only text/email/text-like fields
   const inputs = await page.$$('input[type="text"], input[type="email"], textarea, input:not([type]), input[type=""]');
@@ -407,9 +445,21 @@ async function fillFormFields(page, jobId, formAnswers) {
         await inputs[i].fill(value);
         console.log(`[${jobId}] ✓ Successfully filled field[${i}]`);
         filledCount++;
+        filledFields.push({
+          index: i,
+          fieldKey,
+          type: type || 'text',
+          filled: true,
+          valuePreview: String(value).slice(0, 4) + '***',
+        });
       }
     } catch (err) {
       console.warn(`[${jobId}] ✗ Error filling field[${i}]: ${err.message}`);
+      filledFields.push({
+        index: i,
+        filled: false,
+        error: err.message,
+      });
     }
   }
 
@@ -430,18 +480,46 @@ async function fillFormFields(page, jobId, formAnswers) {
       if (fieldKey.includes('experience') || fieldKey.includes('level')) {
         await selects[i].selectOption('Mid-level');
         console.log(`[${jobId}] ✓ Selected 'Mid-level' for ${fieldKey}`);
+        filledFields.push({
+          index: i,
+          fieldKey,
+          type: 'select',
+          filled: true,
+          valuePreview: 'Mid-level',
+        });
       } else if (fieldKey.includes('country') || fieldKey.includes('location')) {
         // Try common options
         const options = await selects[i].$$('option');
         if (options.length > 1) {
           await selects[i].selectOption({ index: 1 });
           console.log(`[${jobId}] ✓ Selected index 1 for ${fieldKey}`);
+          filledFields.push({
+            index: i,
+            fieldKey,
+            type: 'select',
+            filled: true,
+            valuePreview: 'option#index:1',
+          });
         }
       }
     } catch (err) {
       console.warn(`[${jobId}] ✗ Error with select[${i}]: ${err.message}`);
+      filledFields.push({
+        index: i,
+        type: 'select',
+        filled: false,
+        error: err.message,
+      });
     }
   }
+
+  return {
+    totalElements: allInputs.length,
+    textCandidateCount: inputs.length,
+    selectCount: selects.length,
+    filledCount,
+    fields: filledFields,
+  };
 }
 
 /**
