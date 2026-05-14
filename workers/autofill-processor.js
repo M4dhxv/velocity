@@ -298,8 +298,8 @@ async function executePlaywrightFill(jobData) {
 async function fillFormFields(page, jobId, formAnswers) {
   console.log(`[${jobId}] Filling form fields`);
 
-  // Get all input fields
-  const inputs = await page.$$('input[type="text"], input[type="email"], textarea, select');
+  // Get all input fields on the page
+  const inputs = await page.$$('input[type="text"], input[type="email"], textarea, select, input:not([type])');
   
   for (const input of inputs) {
     try {
