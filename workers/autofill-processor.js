@@ -240,10 +240,18 @@ async function executePlaywrightFill(jobData) {
     console.log(`[${jobId}] Navigating to ${jobUrl}`);
     await page.goto(jobUrl, { waitUntil: 'networkidle', timeout: 30000 });
 
-    // Wait for form to load
-    await page.waitForSelector('form, [role="form"]', { timeout: 10000 }).catch(() => {
-      console.warn(`[${jobId}] No form found, continuing anyway`);
-    });
+    // Wait for form to load - try multiple selectors for different ATS platforms
+    try {
+      await page.waitForSelector('form, [role="form"], input[type="text"], input[type="email"]', { timeout: 15000 });
+      console.log(`[${jobId}] Form selector found`);
+    } catch (err) {
+      console.warn(`[${jobId}] Form selector timeout, waiting extra 5s and continuing anyway`);
+      await page.waitForTimeout(5000); // Extra wait for React/JS to render
+    }
+
+    // Debug: log all visible inputs
+    const inputCount = await page.$$eval('input, textarea, select', els => els.length);
+    console.log(`[${jobId}] Found ${inputCount} form inputs on page`);
 
     // Fill form fields
     await fillFormFields(page, jobId, formAnswers);
@@ -296,73 +304,94 @@ async function executePlaywrightFill(jobData) {
  * Fill form fields with user data
  */
 async function fillFormFields(page, jobId, formAnswers) {
-  console.log(`[${jobId}] Filling form fields`);
+  console.log(`[${jobId}] Starting form field fill`);
 
-  // Get all input fields on the page
-  const inputs = await page.$$('input[type="text"], input[type="email"], textarea, select, input:not([type])');
+  // Get all potentially fillable inputs (broader selector for React apps)
+  const allInputs = await page.$$('input, textarea, select');
+  console.log(`[${jobId}] Total inputs/textareas/selects found: ${allInputs.length}`);
+
+  let filledCount = 0;
+
+  // Filter to only text/email/text-like fields
+  const inputs = await page.$$('input[type="text"], input[type="email"], textarea, input:not([type]), input[type=""]');
+  console.log(`[${jobId}] Text/email inputs found: ${inputs.length}`);
   
-  for (const input of inputs) {
+  for (let i = 0; i < inputs.length; i++) {
     try {
-      const name = await input.getAttribute('name');
-      const type = await input.getAttribute('type');
-      const id = await input.getAttribute('id');
-      const placeholder = await input.getAttribute('placeholder');
+      const name = await inputs[i].getAttribute('name');
+      const type = await inputs[i].getAttribute('type');
+      const id = await inputs[i].getAttribute('id');
+      const placeholder = await inputs[i].getAttribute('placeholder');
+      const dataTest = await inputs[i].getAttribute('data-testid');
+      const ariaLabel = await inputs[i].getAttribute('aria-label');
       
-      // Determine field type
-      let fieldKey = name || id || placeholder || '';
+      // Determine field type - check all possible attributes
+      let fieldKey = name || id || placeholder || dataTest || ariaLabel || `field_${i}`;
       fieldKey = fieldKey.toLowerCase();
+
+      console.log(`[${jobId}] Input[${i}]: name='${name}', type='${type}', id='${id}', placeholder='${placeholder}'`);
 
       let value = null;
 
       // Map common field names to form answers
-      if (fieldKey.includes('first') || fieldKey.includes('fname')) {
+      if (fieldKey.includes('first') || fieldKey.includes('fname') || placeholder?.toLowerCase().includes('first')) {
         value = formAnswers.firstName || formAnswers.first_name || 'John';
-      } else if (fieldKey.includes('last') || fieldKey.includes('lname')) {
+      } else if (fieldKey.includes('last') || fieldKey.includes('lname') || placeholder?.toLowerCase().includes('last')) {
         value = formAnswers.lastName || formAnswers.last_name || 'Doe';
-      } else if (fieldKey.includes('email')) {
+      } else if (fieldKey.includes('email') || placeholder?.toLowerCase().includes('email')) {
         value = formAnswers.email || 'john@example.com';
-      } else if (fieldKey.includes('phone')) {
+      } else if (fieldKey.includes('phone') || placeholder?.toLowerCase().includes('phone')) {
         value = formAnswers.phone || '+1-555-0000';
-      } else if (fieldKey.includes('location') || fieldKey.includes('city')) {
+      } else if (fieldKey.includes('location') || fieldKey.includes('city') || placeholder?.toLowerCase().includes('location')) {
         value = formAnswers.location || formAnswers.city || 'San Francisco';
-      } else if (fieldKey.includes('experience') || fieldKey.includes('years')) {
+      } else if (fieldKey.includes('experience') || fieldKey.includes('years') || placeholder?.toLowerCase().includes('experience')) {
         value = formAnswers.yearsExperience || '5';
-      } else if (fieldKey.includes('linkedin')) {
+      } else if (fieldKey.includes('linkedin') || placeholder?.toLowerCase().includes('linkedin')) {
         value = formAnswers.linkedin || 'https://linkedin.com/in/johndoe';
-      } else if (fieldKey.includes('website') || fieldKey.includes('portfolio')) {
+      } else if (fieldKey.includes('website') || fieldKey.includes('portfolio') || placeholder?.toLowerCase().includes('website')) {
         value = formAnswers.website || formAnswers.portfolio || '';
-      } else if (fieldKey.includes('message') || fieldKey.includes('cover') || fieldKey.includes('comment')) {
+      } else if (fieldKey.includes('message') || fieldKey.includes('cover') || fieldKey.includes('comment') || placeholder?.toLowerCase().includes('message')) {
         value = formAnswers.message || formAnswers.coverLetter || 'Interested in this opportunity.';
       }
 
       if (value) {
-        console.log(`[${jobId}] Filling ${fieldKey} = ${value.substring(0, 20)}`);
-        await input.fill(value);
+        console.log(`[${jobId}] Attempting to fill field[${i}] (${fieldKey}) with: ${value.substring(0, 30)}`);
+        await inputs[i].fill(value);
+        console.log(`[${jobId}] ✓ Successfully filled field[${i}]`);
+        filledCount++;
       }
     } catch (err) {
-      console.warn(`[${jobId}] Error filling field: ${err.message}`);
+      console.warn(`[${jobId}] ✗ Error filling field[${i}]: ${err.message}`);
     }
   }
 
+  console.log(`[${jobId}] Text input fill complete: ${filledCount} fields filled out of ${inputs.length}`);
+
   // Fill select dropdowns
   const selects = await page.$$('select');
-  for (const select of selects) {
+  console.log(`[${jobId}] Select dropdowns found: ${selects.length}`);
+  
+  for (let i = 0; i < selects.length; i++) {
     try {
-      const name = await select.getAttribute('name');
-      const id = await select.getAttribute('id');
-      const fieldKey = (name || id || '').toLowerCase();
+      const name = await selects[i].getAttribute('name');
+      const id = await selects[i].getAttribute('id');
+      const fieldKey = (name || id || `select_${i}`).toLowerCase();
+
+      console.log(`[${jobId}] Select[${i}]: name='${name}', id='${id}'`);
 
       if (fieldKey.includes('experience') || fieldKey.includes('level')) {
-        await select.selectOption('Mid-level');
+        await selects[i].selectOption('Mid-level');
+        console.log(`[${jobId}] ✓ Selected 'Mid-level' for ${fieldKey}`);
       } else if (fieldKey.includes('country') || fieldKey.includes('location')) {
         // Try common options
-        const options = await select.$$('option');
+        const options = await selects[i].$$('option');
         if (options.length > 1) {
-          await select.selectOption({ index: 1 });
+          await selects[i].selectOption({ index: 1 });
+          console.log(`[${jobId}] ✓ Selected index 1 for ${fieldKey}`);
         }
       }
     } catch (err) {
-      console.warn(`[${jobId}] Error selecting dropdown: ${err.message}`);
+      console.warn(`[${jobId}] ✗ Error with select[${i}]: ${err.message}`);
     }
   }
 }
