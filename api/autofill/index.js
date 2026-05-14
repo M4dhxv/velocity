@@ -139,8 +139,7 @@ async function handleEnqueue(req, res, userId) {
       resolvedJobId = dbJob.id;
     }
 
-    // Enqueue the job
-    const bullmqJobId = await enqueueAutofillJob({
+    const enqueuePayload = {
       userId,
       jobId: resolvedJobId,
       jobUrl,
@@ -150,7 +149,18 @@ async function handleEnqueue(req, res, userId) {
       formAnswers,
       resumeUrl,
       scheduledDelayMs: scheduledDelayMs || generateApplyDelay(),
-    });
+    };
+
+    // Enforce a hard timeout to avoid Vercel 504s from long Redis hangs.
+    const bullmqJobId = await Promise.race([
+      enqueueAutofillJob(enqueuePayload),
+      new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error('ENQUEUE_TIMEOUT: Redis/queue did not respond in time')),
+          7000
+        )
+      ),
+    ]);
 
     // Insert into autofill_jobs table
     const { data: dbJob, error: insertError } = await supabase
@@ -184,9 +194,22 @@ async function handleEnqueue(req, res, userId) {
     });
   } catch (err) {
     console.error('Enqueue error:', err);
+    const msg = String(err?.message || '');
+    if (msg.includes('REDIS_CONNECT_FAILED')) {
+      return res.status(503).json({
+        error: 'Queue unavailable',
+        details: msg,
+      });
+    }
+    if (msg.includes('ENQUEUE_TIMEOUT')) {
+      return res.status(504).json({
+        error: 'Queue timeout',
+        details: msg,
+      });
+    }
     return res.status(500).json({
       error: 'Failed to enqueue job',
-      details: err.message,
+      details: msg || 'unknown enqueue error',
     });
   }
 }
