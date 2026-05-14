@@ -8,7 +8,8 @@
     "start": "node server.js",
     "dev:vercel": "vercel dev",
     "ingest:jobs": "node scripts/ingest-jobs.js",
-    "worker:autofill": "node workers/autofill-processor.js"
+    "worker:autofill": "node workers/autofill-processor.js",
+    "heroku-postbuild": "npx playwright install chromium"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
