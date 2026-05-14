@@ -1877,6 +1877,18 @@
       const jobTokens = new Set(tokenize(haystack));
       const jobType = normalizeWorkType(job.type);
       let score = 0;
+      const sourceLower = String(job.source || '').toLowerCase();
+
+      // Prefer fresh listings and prioritize Career-Ops over stale marketplace rows
+      const postedAtMs = job.postedAt ? new Date(job.postedAt).getTime() : 0;
+      const ageDays = postedAtMs ? ((Date.now() - postedAtMs) / (1000 * 60 * 60 * 24)) : 999;
+      if (ageDays <= 3) score += 3;
+      else if (ageDays <= 7) score += 2;
+      else if (ageDays <= 14) score += 1;
+      else if (ageDays > 30) score -= 2;
+
+      if (sourceLower === 'careerops') score += 3;
+      if (sourceLower === 'upwork' && ageDays > 14) score -= 2;
 
       expandedSkills.forEach((skill) => {
         if (jobTokens.has(skill)) score += 4;

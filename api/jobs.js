@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { category, type, location, limit = 20, search } = req.query;
+    const { category, type, location, limit = 20, search, source } = req.query;
 
     let query = supabase
       .from('jobs')
@@ -41,6 +41,10 @@ export default async function handler(req, res) {
       query = query.or(
         `title.ilike.%${search}%,description.ilike.%${search}%`
       );
+    }
+
+    if (source) {
+      query = query.eq('source', String(source).trim().toLowerCase());
     }
 
     const { data, error } = await query.order('posted_at', {
