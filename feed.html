@@ -1792,23 +1792,26 @@
     if (state.jobsLoaded && !force) return state.marketJobs;
 
     try {
-      const { data, error } = await sb
-        .from('jobs')
-        .select('id, title, company, description, skills, type, budget, hourly_rate_min, hourly_rate_max, currency, location, source, source_url, posted_at')
-        .order('posted_at', { ascending: false })
-        .limit(600);
+      // Prefer server API (runs with server env and avoids client-side RLS surprises).
+      const apiRes = await fetch('/api/jobs?limit=600');
+      const apiData = await apiRes.json().catch(() => null);
+      if (!apiRes.ok || !apiData) {
+        throw new Error(apiData?.error || `jobs_api_http_${apiRes.status}`);
+      }
 
-      if (error) throw error;
-
-      const mapped = (Array.isArray(data) ? data : [])
+      const mapped = (Array.isArray(apiData.jobs) ? apiData.jobs : [])
         .map((row) => mapDbJob(row))
         .filter((job) => job.title);
 
       state.marketJobs = mapped;
       state.jobsLoaded = true;
+      if (!mapped.length) {
+        setStatus('No live jobs returned from API. Showing fallback cards.', 'processing');
+      }
       return mapped;
     } catch (error) {
       console.error('jobs_fetch_failed', error);
+      setStatus(`Jobs API failed: ${error?.message || 'unknown_error'}. Showing fallback cards.`, 'processing');
       state.jobsLoaded = true;
       state.marketJobs = [];
       return [];
@@ -1927,6 +1930,7 @@
     scored.sort((a, b) => b._score - a._score);
     const meaningful = scored.filter((j) => Number(j._score) > 0);
     if (meaningful.length) return meaningful.slice(0, 8);
+    if (scored.length) return scored.slice(0, 8);
     return [...fallbackJobs].map((job) => ({ ...job, _score: 1, _fallback: true }));
   }
 
@@ -2130,10 +2134,16 @@
   }
 
   function renderResume(profile) {
+    const resumeCard = $('voice-resume-card');
+    if (!resumeCard) {
+      console.warn('resume_card_missing');
+      return;
+    }
+
     const draft = buildResumeDraftData(profile);
     state.resumeDraft = draft;
     const resumeText = draft.text;
-    $('voice-resume-card').innerHTML = `
+    resumeCard.innerHTML = `
       <h3 class="voice-resume-title"><span class="material-symbols-outlined" style="font-size:16px">description</span>Resume Draft Build</h3>
       <p class="voice-resume-text">${resumeText}</p>
       <div class="voice-resume-actions">
@@ -2152,8 +2162,11 @@
         const a = document.createElement('a');
         a.href = url;
         a.download = 'giggrab-resume-draft.txt';
+        document.body.appendChild(a);
         a.click();
+        a.remove();
         URL.revokeObjectURL(url);
+        setStatus('Resume draft downloaded.', 'success');
       };
     }
 
@@ -2162,8 +2175,10 @@
         try {
           await navigator.clipboard.writeText(resumeText);
           copyBtn.textContent = 'Copied';
+          setStatus('Resume draft copied.', 'success');
         } catch {
           copyBtn.textContent = 'Copy failed';
+          setStatus('Resume copy failed in this browser session.', 'processing');
         }
       };
     }
