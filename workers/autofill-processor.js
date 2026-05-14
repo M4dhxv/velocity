@@ -61,7 +61,8 @@ const createAutofillWorker = () => {
   return new Worker(
     'autofill-applications',
     async (job) => {
-      console.log(`[${job.id}] Starting autofill for ${job.data.company} - ${job.data.roleTitle}`);
+      const jobId = String(job.id);
+      console.log(`[${jobId}] Starting autofill for ${job.data.company} - ${job.data.roleTitle}`);
 
       try {
         // 1. Check global concurrency
@@ -72,7 +73,7 @@ const createAutofillWorker = () => {
 
         if (!concurrencyCheck.acquired) {
           // Queue is full, retry later
-          console.warn(`[${job.id}] Global concurrency limit reached, retrying in 10s`);
+          console.warn(`[${jobId}] Global concurrency limit reached, retrying in 10s`);
           throw new Error('RETRY_LATER: Concurrency limit reached');
         }
 
@@ -91,7 +92,7 @@ const createAutofillWorker = () => {
 
           // 3. Apply delay (randomized, human-like)
           const applyDelay = job.data.scheduledDelayMs || 15000;
-          console.log(`[${job.id}] Waiting ${applyDelay}ms before apply...`);
+          console.log(`[${jobId}] Waiting ${applyDelay}ms before apply...`);
           await new Promise((resolve) => setTimeout(resolve, applyDelay));
 
           // 4. Execute Playwright fill
@@ -110,10 +111,10 @@ const createAutofillWorker = () => {
               result_video_url: fillResult.videoUrl,
               hitl_artifacts: fillResult.artifacts || {},
             })
-            .eq('bullmq_job_id', job.id);
+            .eq('bullmq_job_id', jobId);
 
           console.log(
-            `[${job.id}] ✅ Successfully completed: ${job.data.company}`
+            `[${jobId}] ✅ Successfully completed: ${job.data.company}`
           );
 
           return {
@@ -130,10 +131,10 @@ const createAutofillWorker = () => {
       } catch (err) {
         // Handle HITL scenarios (CAPTCHA, blocked, etc)
         if (err.isHITLRequired) {
-          console.warn(`[${job.id}] HITL required: ${err.reason}`);
+          console.warn(`[${jobId}] HITL required: ${err.reason}`);
 
           await pauseForHITL({
-            jobId: job.id,
+            jobId,
             reason: err.reason,
             artifacts: err.artifacts,
           });
@@ -148,13 +149,13 @@ const createAutofillWorker = () => {
               hitl_artifacts: err.artifacts || {},
               result_screenshot_url: err.artifacts?.screenshot,
             })
-            .eq('bullmq_job_id', job.id);
+            .eq('bullmq_job_id', jobId);
 
           // Create HITL queue entry
           const { data: autofillJob } = await supabase
             .from('autofill_jobs')
             .select('id')
-            .eq('bullmq_job_id', job.id)
+            .eq('bullmq_job_id', jobId)
             .single();
 
           if (autofillJob) {
@@ -171,13 +172,13 @@ const createAutofillWorker = () => {
 
         // Handle rate limit retry
         if (err.message.includes('RETRY_LATER')) {
-          console.warn(`[${job.id}] Retry scheduled: ${err.message}`);
+          console.warn(`[${jobId}] Retry scheduled: ${err.message}`);
           await recordDomainFailure(job.data.domain, err);
           throw err;
         }
 
         // Permanent failure
-        console.error(`[${job.id}] ❌ Failed: ${err.message}`);
+        console.error(`[${jobId}] ❌ Failed: ${err.message}`);
 
         await supabase
           .from('autofill_jobs')
@@ -186,7 +187,7 @@ const createAutofillWorker = () => {
             error_message: err.message,
             error_stacktrace: err.stack,
           })
-          .eq('bullmq_job_id', job.id);
+          .eq('bullmq_job_id', jobId);
 
         await recordDomainFailure(job.data.domain, err);
 
