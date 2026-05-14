@@ -212,6 +212,10 @@ const createAutofillWorker = () => {
 async function executePlaywrightFill(jobData) {
   const { jobId, jobUrl, company, roleTitle, formAnswers = {}, resumeUrl } =
     jobData;
+  const headless =
+    jobData.headless !== undefined
+      ? Boolean(jobData.headless)
+      : process.env.AUTOFILL_HEADLESS !== 'false';
 
   let browser;
   let page;
@@ -221,7 +225,7 @@ async function executePlaywrightFill(jobData) {
     const chromium = require('playwright').chromium;
     
     browser = await chromium.launch({ 
-      headless: true,
+      headless,
       args: ['--disable-blink-features=AutomationControlled'],
     });
     
