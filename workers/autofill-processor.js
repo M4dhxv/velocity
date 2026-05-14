@@ -11,6 +11,7 @@
 import { Worker } from 'bullmq';
 import Redis from 'ioredis';
 import { createClient } from '@supabase/supabase-js';
+import { chromium } from 'playwright';
 import {
   calculateBackoffWithJitter,
   pauseForHITL,
@@ -222,8 +223,6 @@ async function executePlaywrightFill(jobData) {
 
   try {
     console.log(`[${jobId}] Launching Playwright for ${jobUrl}`);
-    const chromium = require('playwright').chromium;
-    
     browser = await chromium.launch({ 
       headless,
       args: ['--disable-blink-features=AutomationControlled'],
@@ -338,11 +337,10 @@ async function executePlaywrightFill(jobData) {
 
   } catch (err) {
     console.error(`[${jobId}] Playwright error: ${err.message}`);
-    throw {
-      reason: 'FILL_FAILED',
-      message: err.message,
-      artifacts: null,
-    };
+    const wrapped = new Error(err.message || 'Playwright fill failed');
+    wrapped.reason = 'FILL_FAILED';
+    wrapped.artifacts = null;
+    throw wrapped;
   } finally {
     if (browser) {
       await browser.close();

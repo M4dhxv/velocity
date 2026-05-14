@@ -1770,8 +1770,13 @@
   }
 
   function mapDbJob(row = {}) {
+    const title = String(row.title || 'Untitled job').trim();
+    const explicitCompany = String(row.company || '').trim();
+    const inferredCompany = title.includes(' at ') ? title.split(' at ').slice(-1)[0].trim() : '';
     return {
-      title: String(row.title || 'Untitled job').trim(),
+      id: row.id || null,
+      title,
+      company: explicitCompany || inferredCompany || String(row.source || 'Unknown Company').trim(),
       type: toDisplayType(row.type),
       pay: formatPayFromRow(row),
       location: String(row.location || 'Anywhere').trim() || 'Anywhere',
@@ -1789,7 +1794,7 @@
     try {
       const { data, error } = await sb
         .from('jobs')
-        .select('title, description, skills, type, budget, hourly_rate_min, hourly_rate_max, currency, location, source, source_url, posted_at')
+        .select('id, title, company, description, skills, type, budget, hourly_rate_min, hourly_rate_max, currency, location, source, source_url, posted_at')
         .order('posted_at', { ascending: false })
         .limit(600);
 
@@ -1953,7 +1958,7 @@
           <p class="voice-job-meta">${meta || 'Anywhere'}</p>
           <p class="voice-match">${job._fallback ? 'Recommended for quick start' : 'Matched to your profile'}</p>
           <div class="voice-job-actions">
-            <button class="voice-job-grab" type="button" ${job.sourceUrl ? `onclick="window.open('${job.sourceUrl.replace(/'/g, '&#39;')}', '_blank')"` : ''}>Apply</button>
+            <button class="voice-job-grab" type="button" data-job-index="${index}" ${job.sourceUrl ? '' : 'disabled title="No application URL available"'}>Apply</button>
             <button class="voice-job-save" type="button">Save</button>
           </div>
         </div>
@@ -1964,6 +1969,107 @@
       </article>
     `;
     }).join('');
+
+    const applyButtons = Array.from(document.querySelectorAll('.voice-job-grab[data-job-index]'));
+    applyButtons.forEach((btn) => {
+      if (btn.dataset.bound === '1') return;
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', async () => {
+        const idx = Number(btn.dataset.jobIndex);
+        const selectedJob = matches[idx];
+        if (!selectedJob) return;
+        await enqueueAutofillForJob(selectedJob, btn);
+      });
+    });
+  }
+
+  function buildAutofillFormAnswers() {
+    const user = state.session?.user || {};
+    const profile = state.profile || {};
+    const metadata = user.user_metadata || {};
+    const fullName = String(metadata.full_name || '').trim();
+    const firstFromName = fullName ? fullName.split(/\s+/)[0] : '';
+    const lastFromName = fullName ? fullName.split(/\s+/).slice(1).join(' ') : '';
+    const draft = state.resumeDraft || {};
+
+    return {
+      firstName: firstFromName || 'Gig',
+      lastName: lastFromName || 'User',
+      email: String(user.email || '').trim(),
+      phone: String(metadata.phone || '').trim(),
+      city: String(state.userCity || '').trim(),
+      location: String([state.userCity, state.userCountry].filter(Boolean).join(', ') || '').trim(),
+      yearsExperience: String(profile.experience || profile.level || '').trim(),
+      linkedin: String(state.socialConnections?.linkedin?.url || '').trim(),
+      website: String(state.socialConnections?.github?.url || '').trim(),
+      portfolio: String(state.socialConnections?.github?.url || '').trim(),
+      message: draft.text || `I am interested in this ${profile.work_type || ''} opportunity and can start quickly.`,
+    };
+  }
+
+  async function enqueueAutofillForJob(job, buttonEl) {
+    const jobUrl = String(job?.sourceUrl || '').trim();
+    if (!jobUrl) {
+      setStatus('This listing has no apply URL.', 'processing');
+      return;
+    }
+
+    const token = state.session?.access_token;
+    if (!token) {
+      window.open(jobUrl, '_blank', 'noopener,noreferrer');
+      setStatus('Session expired. Opened the job page directly.', 'processing');
+      return;
+    }
+
+    const previousLabel = buttonEl?.textContent || 'Apply';
+    if (buttonEl) {
+      buttonEl.disabled = true;
+      buttonEl.textContent = 'Queueing...';
+    }
+
+    const formAnswers = buildAutofillFormAnswers();
+    const payload = {
+      jobId: job.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      jobUrl,
+      company: String(job.company || job.source || 'Unknown Company').trim(),
+      roleTitle: String(job.title || 'Untitled Role').trim(),
+      domain: (() => {
+        try {
+          return new URL(jobUrl).hostname.replace(/^www\./, '');
+        } catch {
+          return '';
+        }
+      })(),
+      formAnswers,
+      resumeUrl: '',
+    };
+
+    try {
+      const res = await fetch('/api/autofill', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data) {
+        throw new Error(data?.error || `autofill_http_${res.status}`);
+      }
+
+      setStatus(`Autofill queued for ${payload.company}.`, 'success');
+      if (buttonEl) buttonEl.textContent = 'Queued';
+    } catch (error) {
+      console.error('autofill_enqueue_failed', error);
+      setStatus('Autofill enqueue failed. Opened job page instead.', 'processing');
+      window.open(jobUrl, '_blank', 'noopener,noreferrer');
+      if (buttonEl) {
+        buttonEl.disabled = false;
+        buttonEl.textContent = previousLabel;
+      }
+    }
   }
 
   function renderProfile(profile) {
