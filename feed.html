@@ -2056,15 +2056,15 @@
 
       const data = await res.json().catch(() => null);
       if (!res.ok || !data) {
-        throw new Error(data?.error || `autofill_http_${res.status}`);
+        const detail = [data?.error, data?.details].filter(Boolean).join(' | ');
+        throw new Error(detail || `autofill_http_${res.status}`);
       }
 
       setStatus(`Autofill queued for ${payload.company}.`, 'success');
       if (buttonEl) buttonEl.textContent = 'Queued';
     } catch (error) {
       console.error('autofill_enqueue_failed', error);
-      setStatus('Autofill enqueue failed. Opened job page instead.', 'processing');
-      window.open(jobUrl, '_blank', 'noopener,noreferrer');
+      setStatus(`Autofill enqueue failed: ${error?.message || 'unknown error'}`, 'processing');
       if (buttonEl) {
         buttonEl.disabled = false;
         buttonEl.textContent = previousLabel;

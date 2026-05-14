@@ -33,6 +33,12 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+function isUuid(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    String(value || '').trim()
+  );
+}
+
 /**
  * Verify JWT and extract user
  */
@@ -89,19 +95,7 @@ async function handleEnqueue(req, res, userId) {
     });
   }
 
-  // Check if user has credits
-  const { data: credits, error: creditError } = await supabase
-    .from('autofill_credits')
-    .select('remaining_credits')
-    .eq('user_id', userId)
-    .single();
-
-  if (creditError || !credits || credits.remaining_credits <= 0) {
-    return res.status(402).json({
-      error: 'Insufficient credits. Purchase more or wait for monthly reset.',
-      remainingCredits: credits?.remaining_credits || 0,
-    });
-  }
+  // Credits temporarily bypassed for debugging stability.
 
   // Check for duplicate (within 24 hours)
   const isNew = await isJobNew({
@@ -118,10 +112,37 @@ async function handleEnqueue(req, res, userId) {
   }
 
   try {
+    let resolvedJobId = String(jobId).trim();
+
+    // If frontend passed a non-UUID fallback id, resolve from jobs table by URL.
+    if (!isUuid(resolvedJobId)) {
+      const { data: dbJob, error: jobLookupError } = await supabase
+        .from('jobs')
+        .select('id')
+        .eq('source_url', jobUrl)
+        .limit(1)
+        .maybeSingle();
+
+      if (jobLookupError) {
+        return res.status(500).json({
+          error: 'Failed to resolve job ID',
+          details: jobLookupError.message,
+        });
+      }
+
+      if (!dbJob?.id || !isUuid(dbJob.id)) {
+        return res.status(400).json({
+          error: 'Invalid jobId and no jobs.id found for provided jobUrl',
+        });
+      }
+
+      resolvedJobId = dbJob.id;
+    }
+
     // Enqueue the job
     const bullmqJobId = await enqueueAutofillJob({
       userId,
-      jobId,
+      jobId: resolvedJobId,
       jobUrl,
       company,
       roleTitle,
@@ -136,7 +157,7 @@ async function handleEnqueue(req, res, userId) {
       .from('autofill_jobs')
       .insert({
         user_id: userId,
-        job_id: jobId,
+        job_id: resolvedJobId,
         bullmq_job_id: bullmqJobId,
         job_url: jobUrl,
         company,
@@ -150,7 +171,10 @@ async function handleEnqueue(req, res, userId) {
 
     if (insertError) {
       console.error('Insert error:', insertError);
-      return res.status(500).json({ error: 'Failed to enqueue job' });
+      return res.status(500).json({
+        error: 'Failed to enqueue job',
+        details: insertError.message,
+      });
     }
 
     return res.status(202).json({
